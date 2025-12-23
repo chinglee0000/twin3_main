@@ -10,35 +10,49 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         id: 'welcome',
         triggers: ['start', 'hi', 'hello', 'menu'],
         response: {
-            text: "Welcome to the twin3 community!\n\ntwin3 is a project shaping secure digital identities in the AI era with its Proof of Authenticity, powered by a 256D Twin Matrix & SBTs.\n\nClick the suggestions below or ask me anything about twin3!",
+            text: "Welcome to the twin3 community!\n\ntwin3 transforms your social influence into a verifiable digital identity.\nAI analyzes your content style and engagement to unlock exclusive brand collaborations.\n\nClick the suggestions below or ask me anything about twin3!",
             delay: 800,
             card: {
                 type: 'feature_grid',
                 features: [
                     {
-                        title: 'Soulbound Twin',
-                        description: 'Convert your traits across physical, digital, social and spiritual realms into the Twin Matrix — a 256-dimensional soulbound representation of your authentic self.'
+                        icon: 'target',
+                        title: 'Discover Your Value',
+                        description: 'AI analyzes your unique influence and generates your Twin Matrix Score (0-255)'
                     },
                     {
-                        title: 'Soul Injection',
-                        description: 'Inject selected traits into your personal agents. Each agent inherits specific abilities, becoming your digital representatives in the AI economy.'
+                        icon: 'handshake',
+                        title: 'Match Brand Tasks',
+                        description: 'Higher scores unlock premium brand collaborations with better rewards'
                     },
                     {
-                        title: 'Agentic Human',
-                        description: 'Your agents work as human-in-the-loop partners in AI systems, automatically finding and completing tasks in agent marketplaces to earn continuous value.'
-                    },
-                    {
-                        title: 'Whitepaper',
-                        description: 'Learn more about twin3 vision and technology.',
-                        link: 'https://twin3.ai/whitepaper'
+                        icon: 'stars',
+                        title: 'Build Digital Assets',
+                        description: 'Transform your influence into portable proof of authenticity for the AI era'
                     }
                 ]
             }
         },
         suggestedActions: [
-            { label: 'View Twin Matrix', payload: 'twin_matrix' },
-            { label: 'Complete Verification', payload: 'verify_human' },
-            { label: 'Browse Tasks', payload: 'browse_tasks' }
+            { label: 'Get Started', payload: 'verify_human' },
+            { label: 'How It Works', payload: 'how_it_works' },
+            { label: 'View Sample Tasks', payload: 'browse_tasks' }
+        ]
+    },
+
+    // ============================================================
+    // 1.2 HOW IT WORKS - PLATFORM EXPLAINER
+    // ============================================================
+    {
+        id: 'how_it_works',
+        triggers: ['how', 'how it works', 'explain', 'what is'],
+        response: {
+            text: "**How twin3 Works**\n\n**1. Connect** — Link your social accounts to verify your identity\n\n**2. Analyze** — AI generates your Twin Matrix Score (0-255) based on your content and engagement\n\n**3. Match** — Get matched with brand tasks tailored to your style and influence level\n\n**4. Earn** — Complete tasks to earn tokens and build your digital reputation\n\nReady to discover your value?",
+            delay: 600
+        },
+        suggestedActions: [
+            { label: 'Get Started', payload: 'verify_human' },
+            { label: 'View Sample Tasks', payload: 'browse_tasks' }
         ]
     },
 
@@ -55,8 +69,53 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         },
         suggestedActions: [
             { label: 'Mint SBT', payload: 'mint_sbt' },
+            { label: 'Verify Account', payload: 'verify_human' },
+            { label: 'Browse Tasks', payload: 'browse_tasks' }
+        ]
+    },
+
+    // ============================================================
+    // 1.6 VERIFICATION FLOW (User initiated)
+    // ============================================================
+    {
+        id: 'verify_human',
+        triggers: ['verify', 'verification', 'prove', 'human'],
+        response: {
+            text: "**Connect Your Instagram**\nVerify your account to unlock personalized tasks and discover your influence value.",
+            delay: 500,
+            widget: 'instagram_connect'
+        },
+        suggestedActions: []
+    },
+
+    // ============================================================
+    // 1.7 VERIFICATION REQUIRED (Task acceptance gate)
+    // ============================================================
+    {
+        id: 'verification_required',
+        triggers: [],
+        response: {
+            text: "**Connect Your Instagram**\nVerify your account to unlock personalized tasks and discover your influence value.",
+            delay: 600,
+            widget: 'instagram_connect'
+        },
+        suggestedActions: []
+    },
+
+    // ============================================================
+    // 1.8 VERIFICATION SUCCESS
+    // ============================================================
+    {
+        id: 'verification_success',
+        triggers: ['verified', 'success'],
+        response: {
+            text: "✅ **Verification Complete!**\n\nYour Instagram is now linked. Let's see your Twin Matrix Score!",
+            delay: 500,
+            widget: 'twin_matrix'
+        },
+        suggestedActions: [
             { label: 'Browse Tasks', payload: 'browse_tasks' },
-            { label: 'Back to Home', payload: 'menu' }
+            { label: 'View Dashboard', payload: 'dashboard' }
         ]
     },
 
@@ -67,7 +126,7 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         id: 'browse_tasks',
         triggers: ['task', 'browse', 'jobs'],
         response: {
-            text: "Here are the current task opportunities",
+            text: "**📍 Recommended for You**\n\nComplete **Proof of Humanity** first to boost your score and unlock premium tasks!\n\nHere are the current brand task opportunities:",
             delay: 500,
             card: {
                 type: 'task_opportunity',
@@ -143,20 +202,12 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         id: 'accept_task',
         triggers: ['accept', 'confirm'],
         response: {
-            text: "Great! You have successfully accepted this task!\n\nThe brand will contact you within 24 hours to confirm collaboration details.\n\nRewards will be automatically distributed to your wallet after task completion.",
+            text: "Great! You have successfully accepted this task!\n\nUse the dashboard below to track your progress and submit your work.",
             delay: 800,
-            card: {
-                type: 'confirmation',
-                title: 'Task Accepted',
-                description: 'Please watch for brand contact notifications. Happy collaboration!',
-                actions: [
-                    { label: 'View More Tasks', actionId: 'browse_tasks', variant: 'primary' }
-                ]
-            }
+            widget: 'active_task'
         },
         suggestedActions: [
-            { label: 'View More Tasks', payload: 'browse_tasks' },
-            { label: 'Back to Home', payload: 'menu' }
+            { label: 'View More Tasks', payload: 'browse_tasks' }
         ]
     },
 
@@ -171,8 +222,7 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
             delay: 500
         },
         suggestedActions: [
-            { label: 'View Other Tasks', payload: 'browse_tasks' },
-            { label: 'Back to Home', payload: 'menu' }
+            { label: 'View Other Tasks', payload: 'browse_tasks' }
         ]
     },
 
@@ -185,18 +235,10 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         response: {
             text: "Here is your task dashboard:",
             delay: 500,
-            card: {
-                type: 'generic',
-                title: 'My Dashboard',
-                description: `**In Progress** (1)\n• L'Oreal Lipstick Campaign — Awaiting Submission\n\n**Pending Review** (0)\n\n**Completed** (2)\n• Coffee Shop Collaboration — Claimed 300 $twin3\n• Beauty Unboxing — Claimed 500 $twin3`,
-                actions: [
-                    { label: 'Refresh', actionId: 'dashboard', variant: 'secondary' }
-                ]
-            }
+            widget: 'global_dashboard'
         },
         suggestedActions: [
-            { label: 'Browse More Tasks', payload: 'browse_tasks' },
-            { label: 'Back to Home', payload: 'menu' }
+            { label: 'Browse More Tasks', payload: 'browse_tasks' }
         ]
     },
 
@@ -212,8 +254,7 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         },
         suggestedActions: [
             { label: 'View Tasks', payload: 'browse_tasks' },
-            { label: 'Dashboard', payload: 'dashboard' },
-            { label: 'Back to Home', payload: 'menu' }
+            { label: 'Dashboard', payload: 'dashboard' }
         ]
     }
 ];

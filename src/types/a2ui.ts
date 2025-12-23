@@ -11,6 +11,9 @@ export const WidgetType = {
     TWIN_MATRIX: 'twin_matrix',
     VERIFICATION: 'verification',
     FEATURE_GRID: 'feature_grid',
+    INSTAGRAM_CONNECT: 'instagram_connect',
+    ACTIVE_TASK: 'active_task',
+    GLOBAL_DASHBOARD: 'global_dashboard',
 } as const;
 
 export type WidgetType = typeof WidgetType[keyof typeof WidgetType];

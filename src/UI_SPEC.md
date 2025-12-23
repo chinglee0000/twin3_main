@@ -100,12 +100,17 @@ Twin3 adopts a **Minimalist Elite** design language with iOS-inspired glassmorph
   color: #000000;
   border: 1px solid transparent;
   border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 500;
 }
+```
 
+#### Hover State
+```css
 .btn-primary:hover {
   background: transparent;
-  border: 1px solid #ffffff;
   color: #ffffff;
+  border: 1px solid #ffffff;
 }
 ```
 
@@ -245,10 +250,33 @@ transition: all 0.2s ease;
 
 ---
 
+## Widget Display Rules
+
+> **IMPORTANT**: All widgets and cards should be displayed **inline in the chat area** by default, NOT as popup modals.
+
+### Default Behavior
+- Widgets render as inline chat elements
+- Cards appear in the conversation flow
+- User can scroll through content naturally
+
+### Popup Usage
+- Only use popup/modal when **explicitly requested**
+- Task Detail Modal is the exception (opens on "View Details" click)
+
+### Chat Messages
+- **No avatars** — clean bubble layout
+- **No labels** — distinguish by position and styling
+- User messages: right-aligned, lighter background
+- AI messages: left-aligned, darker background
+
+---
+
 ## File Reference
 
 - **CSS Variables**: `/src/index.css`
 - **Chat Layout**: `/src/features/chat/ChatLayout.tsx`
 - **Task Modal**: `/src/features/cards/TaskDetailModal.tsx`
 - **Message Bubble**: `/src/features/chat/MessageBubble.tsx`
+- **Widgets**: `/src/features/widgets/`
 - **Inventory Data**: `/src/data/inventory.ts`
+

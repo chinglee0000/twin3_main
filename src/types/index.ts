@@ -1,6 +1,6 @@
 // Core Types for Twin3
 export type Role = 'user' | 'assistant';
-export type MessageType = 'text' | 'card';
+export type MessageType = 'text' | 'card' | 'widget';
 
 export interface Action {
     label: string;
@@ -43,5 +43,7 @@ export interface Message {
     type: MessageType;
     content: string;
     cardData?: CardData;
+    widget?: string;  // Widget type to render inline (e.g., 'twin_matrix')
     timestamp: number;
 }
+

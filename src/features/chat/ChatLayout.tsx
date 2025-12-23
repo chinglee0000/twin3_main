@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, Settings, Send, Sparkles, LayoutDashboard, FileText, CheckSquare, X, Coins, Clock, Users, Terminal } from 'lucide-react';
+import { Menu, Settings, Send, Sparkles, LayoutDashboard, FileText, CheckSquare, X, Coins, Clock, Users, Terminal, Plus, Target, Handshake } from 'lucide-react';
 import type { Message } from '../../types';
 import type { Suggestion } from '../../types/a2ui';
 import type { TaskOpportunityPayload } from '../../types';
 import { MessageBubble } from './MessageBubble';
 import { TaskDetailModal } from '../cards/TaskDetailModal';
 import { INTERACTION_INVENTORY } from '../../data/inventory';
-import { generateAgentResponse, isAIEnabled } from '../../services/geminiService';
-import { TwinMatrixWidget, DevConsole, devLog } from '../widgets';
+import { generateAgentResponse, isAIEnabled, generateSuggestions } from '../../services/geminiService';
+import { TwinMatrixWidget, DevConsole, devLog, InstagramConnectWidget, ScoreProgressWidget, ActiveTaskWidget, GlobalDashboardWidget } from '../widgets';
 
 export const ChatLayout: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -17,7 +17,8 @@ export const ChatLayout: React.FC = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<TaskOpportunityPayload | null>(null);
     const [showDevConsole, setShowDevConsole] = useState(false);
-    const [showTwinMatrix, setShowTwinMatrix] = useState(false);
+    const [isVerified, setIsVerified] = useState(false);
+    const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const hasStarted = useRef(false);
@@ -59,6 +60,17 @@ export const ChatLayout: React.FC = () => {
     };
 
     const triggerResponse = async (input: string | null, nodeId: string | null = null, showUserMessage = true) => {
+        // Verification gate: intercept browse_tasks if not verified
+        // Check both nodeId (direct call) and input (from suggestion click)
+        const targetId = nodeId || input;
+        if ((targetId === 'browse_tasks' || input === 'browse_tasks') && !isVerified) {
+            // Override to verification flow
+            nodeId = 'verification_required';
+            input = null; // Don't show user message for redirect
+            showUserMessage = false;
+            devLog('info', 'User not verified - redirecting to verification flow');
+        }
+
         if (input && showUserMessage) {
             const userMsg: Message = {
                 id: Date.now().toString(),
@@ -97,19 +109,30 @@ export const ChatLayout: React.FC = () => {
             setMessages(prev => [...prev, aiMsg]);
             setSuggestions(node.suggestedActions || []);
 
-            // Handle widget rendering
-            if (node.response.widget === 'twin_matrix') {
-                setShowTwinMatrix(true);
-                devLog('info', 'Rendering Twin Matrix widget');
+            // Handle widget rendering - add as inline chat message
+            if (node.response.widget) {
+                const widgetMsg: Message = {
+                    id: (Date.now() + 2).toString(),
+                    role: 'assistant',
+                    type: 'widget',
+                    content: '',
+                    widget: node.response.widget,
+                    timestamp: Date.now(),
+                };
+                setMessages(prev => [...prev, widgetMsg]);
+                devLog('info', `Rendering inline widget: ${node.response.widget}`);
             }
+            devLog('success', `Matched node: ${node.id}`);
         } else if (input && isAIEnabled()) {
             // Use Gemini AI for unmatched queries
+            devLog('api', 'Calling Gemini AI...');
             const history = messages.map(m => ({
                 role: m.role as 'user' | 'assistant',
                 content: m.content
             }));
 
             const response = await generateAgentResponse(input, history);
+            devLog('success', `AI Response: ${response.text.substring(0, 50)}...`);
 
             const aiMsg: Message = {
                 id: (Date.now() + 1).toString(),
@@ -121,11 +144,18 @@ export const ChatLayout: React.FC = () => {
 
             setMessages(prev => [...prev, aiMsg]);
 
-            // Show default suggestions after AI response
-            const fallbackNode = INTERACTION_INVENTORY.find(n => n.id === 'fallback');
-            setSuggestions(fallbackNode?.suggestedActions || []);
+            // Generate AI-powered suggestions based on context
+            const aiSuggestions = await generateSuggestions(
+                response.text,
+                `User asked: ${input}`
+            );
+            setSuggestions(aiSuggestions.map(label => ({
+                label,
+                payload: label.toLowerCase().replace(/\s+/g, '_')
+            })));
         } else {
             // Fallback when no AI available
+            devLog('info', `No match found, using fallback. AI enabled: ${isAIEnabled()}`);
             const fallbackNode = INTERACTION_INVENTORY.find(n => n.id === 'fallback')!;
             await new Promise(r => setTimeout(r, 300));
 
@@ -174,6 +204,16 @@ export const ChatLayout: React.FC = () => {
     };
 
     const handleAcceptTask = () => {
+        if (!isVerified) {
+            // Store pending task and redirect to verification
+            if (selectedTask) {
+                setPendingTaskId(selectedTask.title);
+            }
+            setSelectedTask(null);
+            triggerResponse(null, 'verification_required', false);
+            return;
+        }
+        // User is verified, proceed with task acceptance
         setSelectedTask(null);
         triggerResponse(null, 'accept_task', false);
     };
@@ -316,61 +356,64 @@ export const ChatLayout: React.FC = () => {
                             flexDirection: 'column',
                             gap: '16px'
                         }} className="scrollbar-hide">
+                            {/* Score Progress Widget */}
+                            <ScoreProgressWidget
+                                currentScore={isVerified ? 20 : 0}
+                                maxScore={100}
+                                onTaskClick={(taskId) => {
+                                    if (taskId === 'proof_of_humanity') return;
+                                    triggerResponse(null, 'browse_tasks', false);
+                                }}
+                            />
+
+                            {/* Gas Free Minting Card */}
                             {/* Gas Free Minting Card */}
                             <div className="card" style={{
-                                padding: '20px',
+                                padding: '24px',
                                 background: 'var(--glass-bg)',
                                 border: '1px solid var(--glass-border)',
-                                textAlign: 'center'
+                                textAlign: 'center',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '20px'
                             }}>
-                                <p style={{
-                                    fontSize: '13px',
-                                    color: 'var(--color-text-secondary)',
-                                    marginBottom: '12px',
-                                    lineHeight: '1.5'
-                                }}>
-                                    Gas free minting<br />
-                                    for early users<br />
-                                    <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>limited time only!</span>
-                                </p>
+                                <div>
+                                    <div style={{
+                                        fontSize: '18px',
+                                        fontWeight: 500,
+                                        color: 'var(--color-text-primary)',
+                                        marginBottom: '6px'
+                                    }}>
+                                        Gas free minting
+                                    </div>
+                                    <div style={{
+                                        fontSize: '14px',
+                                        color: 'var(--color-text-secondary)',
+                                        lineHeight: '1.4'
+                                    }}>
+                                        for early users<br />
+                                        <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>limited time only!</span>
+                                    </div>
+                                </div>
+
                                 <div style={{
-                                    fontSize: '48px',
+                                    fontSize: '56px',
                                     fontWeight: 500,
                                     color: 'var(--color-text-primary)',
-                                    marginBottom: '16px',
-                                    letterSpacing: '-2px'
+                                    letterSpacing: '-3px',
+                                    lineHeight: 1
                                 }}>
                                     2750
                                 </div>
+
                                 <button className="btn btn-primary" style={{
                                     width: '100%',
-                                    padding: '12px',
-                                    fontSize: '14px',
+                                    padding: '14px',
+                                    fontSize: '15px',
                                     fontWeight: 500
                                 }}>
                                     Free Mint
                                 </button>
-                            </div>
-
-                            {/* Track Us Card */}
-                            <div className="card" style={{
-                                padding: '20px'
-                            }}>
-                                <p style={{
-                                    fontSize: '14px',
-                                    fontWeight: 500,
-                                    color: 'var(--color-text-primary)',
-                                    marginBottom: '8px'
-                                }}>
-                                    Track us on
-                                </p>
-                                <p style={{
-                                    fontSize: '13px',
-                                    color: 'var(--color-text-secondary)',
-                                    lineHeight: '1.6'
-                                }}>
-                                    X, Element, Farcaster, and BscScan for the latest updates!
-                                </p>
                             </div>
                         </nav>
 
@@ -470,10 +513,19 @@ export const ChatLayout: React.FC = () => {
                                                 color: 'var(--color-text-primary)',
                                                 lineHeight: '1.6',
                                                 maxWidth: '700px',
-                                                margin: '0 auto 12px',
+                                                margin: '0 auto 8px',
                                                 fontWeight: 400
                                             }}>
                                                 {msg.content.split('\n')[2]}
+                                            </p>
+                                            <p style={{
+                                                fontSize: '15px',
+                                                color: 'var(--color-text-secondary)',
+                                                lineHeight: '1.6',
+                                                maxWidth: '700px',
+                                                margin: '0 auto 8px'
+                                            }}>
+                                                {msg.content.split('\n')[3]}
                                             </p>
                                             <p style={{
                                                 fontSize: '14px',
@@ -482,11 +534,11 @@ export const ChatLayout: React.FC = () => {
                                                 maxWidth: '700px',
                                                 margin: '0 auto 24px'
                                             }}>
-                                                {msg.content.split('\n')[4]}
+                                                {msg.content.split('\n')[5]}
                                             </p>
                                             <button
                                                 className="btn btn-primary"
-                                                onClick={() => window.open('https://twin3.ai', '_blank')}
+                                                onClick={() => triggerResponse(null, 'verification_required', false)}
                                                 style={{
                                                     padding: '14px 32px',
                                                     fontSize: '16px',
@@ -494,7 +546,7 @@ export const ChatLayout: React.FC = () => {
                                                     boxShadow: 'var(--glow-primary)'
                                                 }}
                                             >
-                                                Mint SBT
+                                                Discover My Value
                                             </button>
                                         </div>
 
@@ -504,49 +556,65 @@ export const ChatLayout: React.FC = () => {
                                             gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
                                             gap: '16px'
                                         }}>
-                                            {features.map((feature: any, i: number) => (
-                                                <div
-                                                    key={i}
-                                                    className="card card-hover"
-                                                    style={{
-                                                        padding: '24px',
-                                                        cursor: feature.link ? 'pointer' : 'default'
-                                                    }}
-                                                    onClick={() => {
-                                                        if (feature.link) {
-                                                            window.open(feature.link, '_blank');
-                                                        }
-                                                    }}
-                                                >
+                                            {features.map((feature: any, i: number) => {
+                                                // Map icon names to lucide icons
+                                                const IconComponent = feature.icon === 'target' ? Target
+                                                    : feature.icon === 'handshake' ? Handshake
+                                                        : feature.icon === 'stars' ? Sparkles
+                                                            : null;
 
-                                                    <h3 style={{
-                                                        fontSize: '18px',
-                                                        fontWeight: 500,
-                                                        color: 'var(--color-text-primary)',
-                                                        marginBottom: '8px',
-                                                        letterSpacing: '-0.01em'
-                                                    }}>
-                                                        {feature.title}
-                                                    </h3>
-                                                    <p style={{
-                                                        fontSize: '14px',
-                                                        color: 'var(--color-text-secondary)',
-                                                        lineHeight: '1.7'
-                                                    }}>
-                                                        {feature.description}
-                                                    </p>
-                                                    {feature.link && (
-                                                        <div style={{
-                                                            marginTop: '12px',
-                                                            fontSize: '13px',
-                                                            color: 'var(--color-primary)',
-                                                            fontWeight: 500
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        className="card card-hover"
+                                                        style={{
+                                                            padding: '24px',
+                                                            cursor: feature.link ? 'pointer' : 'default'
+                                                        }}
+                                                        onClick={() => {
+                                                            if (feature.link) {
+                                                                window.open(feature.link, '_blank');
+                                                            }
+                                                        }}
+                                                    >
+                                                        {IconComponent && (
+                                                            <div style={{
+                                                                marginBottom: '12px',
+                                                                color: 'var(--color-primary)',
+                                                                opacity: 0.9
+                                                            }}>
+                                                                <IconComponent size={24} />
+                                                            </div>
+                                                        )}
+                                                        <h3 style={{
+                                                            fontSize: '18px',
+                                                            fontWeight: 500,
+                                                            color: 'var(--color-text-primary)',
+                                                            marginBottom: '8px',
+                                                            letterSpacing: '-0.01em'
                                                         }}>
-                                                            Learn more →
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                            {feature.title}
+                                                        </h3>
+                                                        <p style={{
+                                                            fontSize: '14px',
+                                                            color: 'var(--color-text-secondary)',
+                                                            lineHeight: '1.7'
+                                                        }}>
+                                                            {feature.description}
+                                                        </p>
+                                                        {feature.link && (
+                                                            <div style={{
+                                                                marginTop: '12px',
+                                                                fontSize: '13px',
+                                                                color: 'var(--color-primary)',
+                                                                fontWeight: 500
+                                                            }}>
+                                                                Learn more →
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 );
@@ -575,9 +643,9 @@ export const ChatLayout: React.FC = () => {
                                                 <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-primary)', marginBottom: '6px' }}>
                                                     twin3
                                                 </div>
-                                                <p style={{ fontSize: '14px', color: 'var(--color-text-primary)' }}>
-                                                    {msg.content}
-                                                </p>
+                                                <MessageBubble
+                                                    message={{ ...msg, content: msg.content }}
+                                                />
                                             </div>
                                         </div>
 
@@ -593,34 +661,37 @@ export const ChatLayout: React.FC = () => {
                                                     key={i}
                                                     className="card card-hover"
                                                     style={{
-                                                        padding: '20px',
-                                                        cursor: 'pointer'
+                                                        padding: '24px',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: '16px'
                                                     }}
                                                 >
-                                                    <div style={{ display: 'flex', alignItems: 'start', gap: '12px', marginBottom: '12px' }}>
-                                                        <img
-                                                            src={task.brand.logoUrl}
-                                                            alt={task.brand.name}
-                                                            style={{
-                                                                width: '28px',
-                                                                height: '28px',
-                                                                borderRadius: 'var(--radius-md)',
-                                                                border: '1px solid rgba(255, 255, 255, 0.08)'
-                                                            }}
-                                                        />
-                                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                                            <h4 style={{
-                                                                fontSize: '15px',
-                                                                fontWeight: 500,
-                                                                color: 'var(--color-text-primary)',
-                                                                marginBottom: '4px'
-                                                            }}>
-                                                                {task.title}
-                                                            </h4>
-                                                            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-                                                                {task.brand.name}
-                                                            </p>
-                                                        </div>
+                                                    <div>
+                                                        <h4 style={{
+                                                            fontSize: '16px',
+                                                            fontWeight: 600,
+                                                            color: 'var(--color-text-primary)',
+                                                            marginBottom: '6px'
+                                                        }}>
+                                                            {task.title}
+                                                        </h4>
+                                                        <p style={{
+                                                            fontSize: '13px',
+                                                            color: 'var(--color-text-secondary)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px'
+                                                        }}>
+                                                            <span style={{
+                                                                width: '6px',
+                                                                height: '6px',
+                                                                borderRadius: '50%',
+                                                                background: 'var(--color-primary)'
+                                                            }} />
+                                                            {task.brand.name}
+                                                        </p>
                                                     </div>
                                                     <p style={{
                                                         fontSize: '13px',
@@ -685,6 +756,79 @@ export const ChatLayout: React.FC = () => {
                                         </div>
                                     </div>
                                 );
+                            }
+
+                            // Widget messages - render inline
+                            if (msg.type === 'widget') {
+                                if (msg.widget === 'twin_matrix') {
+                                    return (
+                                        <div key={msg.id} className="animate-fade-in" style={{
+                                            marginBottom: '24px',
+                                            display: 'flex',
+                                            justifyContent: 'flex-start'
+                                        }}>
+                                            <TwinMatrixWidget
+                                                username="User"
+                                                onMint={() => {
+                                                    devLog('success', 'SBT Mint initiated');
+                                                    triggerResponse(null, 'mint_sbt', false);
+                                                }}
+                                            />
+                                        </div>
+                                    );
+                                }
+                                if (msg.widget === 'instagram_connect') {
+                                    return (
+                                        <div key={msg.id} className="animate-fade-in" style={{
+                                            marginBottom: '24px',
+                                            display: 'flex',
+                                            justifyContent: 'flex-start'
+                                        }}>
+                                            <InstagramConnectWidget
+                                                onConnect={(username) => {
+                                                    setIsVerified(true);
+                                                    devLog('success', `Instagram connected: @${username}`);
+                                                    triggerResponse(null, 'verification_success', false);
+                                                }}
+                                            />
+                                        </div>
+                                    );
+                                }
+                                if (msg.widget === 'active_task') {
+                                    return (
+                                        <div key={msg.id} className="animate-fade-in" style={{
+                                            marginBottom: '24px',
+                                            display: 'flex',
+                                            justifyContent: 'flex-start'
+                                        }}>
+                                            <ActiveTaskWidget
+                                                onVerify={(url) => {
+                                                    devLog('success', `Task submitted: ${url}`);
+                                                }}
+                                            />
+                                        </div>
+                                    );
+                                }
+                                if (msg.widget === 'global_dashboard') {
+                                    return (
+                                        <div key={msg.id} className="animate-fade-in" style={{
+                                            marginBottom: '24px',
+                                            display: 'flex',
+                                            justifyContent: 'flex-start',
+                                            width: '100%',
+                                            maxWidth: '400px'
+                                        }}>
+                                            <GlobalDashboardWidget
+                                                onViewTask={(taskId) => {
+                                                    devLog('info', `Viewing task: ${taskId}`);
+                                                    // Allow clicking dashboard item to open Active Task
+                                                    triggerResponse(null, 'accept_task', false); // Demo hack to show task
+                                                }}
+                                            />
+                                        </div>
+                                    );
+                                }
+                                return null;
                             }
 
                             // Regular messages
@@ -756,69 +900,115 @@ export const ChatLayout: React.FC = () => {
                     </div>
                 )}
 
-                {/* Input Area */}
+                {/* Input Area - Gemini Style */}
                 <div style={{
-                    padding: '12px 16px 20px',
-                    flexShrink: 0,
-                    borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+                    padding: '16px',
+                    flexShrink: 0
                 }}>
                     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-                        <div className="glass" style={{
-                            display: 'flex',
-                            alignItems: 'flex-end',
-                            gap: '12px',
-                            padding: '12px 14px',
-                            borderRadius: 'var(--radius-xl)',
-                            boxShadow: 'var(--shadow-lg)'
+                        <div style={{
+                            background: 'rgba(32, 33, 36, 0.95)',
+                            borderRadius: '24px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            overflow: 'hidden'
                         }}>
-                            <textarea
-                                ref={inputRef}
-                                value={inputValue}
-                                onChange={(e) => {
-                                    setInputValue(e.target.value);
-                                    if (inputRef.current) {
-                                        inputRef.current.style.height = 'auto';
-                                        inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
-                                    }
-                                }}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Type a message or ask..."
-                                rows={1}
-                                disabled={isTyping}
-                                style={{
-                                    flex: 1,
-                                    background: 'transparent',
-                                    border: 'none',
-                                    outline: 'none',
-                                    resize: 'none',
-                                    color: 'var(--color-text-primary)',
-                                    fontSize: '14px',
-                                    lineHeight: '1.5',
-                                    maxHeight: '120px',
-                                    padding: '4px 0'
-                                }}
-                            />
-                            <button
-                                onClick={handleSubmit}
-                                disabled={!inputValue.trim() || isTyping}
-                                className="btn btn-primary"
-                                style={{
-                                    padding: '10px',
-                                    minWidth: '40px',
-                                    opacity: !inputValue.trim() || isTyping ? 0.4 : 1
-                                }}
-                            >
-                                <Send size={18} />
-                            </button>
+                            {/* Text Input Row */}
+                            <div style={{ padding: '16px 20px 8px' }}>
+                                <textarea
+                                    ref={inputRef}
+                                    value={inputValue}
+                                    onChange={(e) => {
+                                        setInputValue(e.target.value);
+                                        if (inputRef.current) {
+                                            inputRef.current.style.height = 'auto';
+                                            inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 150)}px`;
+                                        }
+                                    }}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder="Ask twin3..."
+                                    rows={1}
+                                    disabled={isTyping}
+                                    style={{
+                                        width: '100%',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        outline: 'none',
+                                        resize: 'none',
+                                        color: 'var(--color-text-primary)',
+                                        fontSize: '16px',
+                                        lineHeight: '1.5',
+                                        maxHeight: '150px',
+                                        fontFamily: 'inherit'
+                                    }}
+                                />
+                            </div>
+
+                            {/* Bottom Tools Row */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '8px 12px 12px 16px'
+                            }}>
+                                {/* Left: Tools */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <button
+                                        style={{
+                                            width: '36px',
+                                            height: '36px',
+                                            borderRadius: '50%',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: 'var(--color-text-dim)',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        title="Attach"
+                                    >
+                                        <Plus size={20} />
+                                    </button>
+                                </div>
+
+                                {/* Right: Send & Status */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {/* Status Indicator */}
+                                    <div style={{
+                                        width: '8px',
+                                        height: '8px',
+                                        borderRadius: '50%',
+                                        background: isAIEnabled() ? '#30d158' : 'var(--color-text-dim)'
+                                    }} title={isAIEnabled() ? 'AI Connected' : 'Demo Mode'} />
+
+                                    {/* Send Button */}
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={!inputValue.trim() || isTyping}
+                                        style={{
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '50%',
+                                            background: inputValue.trim() && !isTyping
+                                                ? 'rgba(255, 255, 255, 0.1)'
+                                                : 'transparent',
+                                            border: 'none',
+                                            color: inputValue.trim() && !isTyping
+                                                ? 'var(--color-text-primary)'
+                                                : 'var(--color-text-dim)',
+                                            cursor: inputValue.trim() && !isTyping ? 'pointer' : 'default',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <Send size={18} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <p style={{
-                            textAlign: 'center',
-                            marginTop: '10px',
-                            fontSize: '11px',
-                            color: 'var(--color-text-dim)'
-                        }}>
-                            AI-generated info is for reference only. Please verify important decisions.
-                        </p>
                     </div>
                 </div>
             </main>
@@ -892,31 +1082,7 @@ export const ChatLayout: React.FC = () => {
                 />
             )}
 
-            {/* Twin Matrix Widget Modal */}
-            {showTwinMatrix && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0, 0, 0, 0.8)',
-                    backdropFilter: 'blur(8px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    padding: '16px'
-                }} onClick={() => setShowTwinMatrix(false)}>
-                    <div onClick={e => e.stopPropagation()}>
-                        <TwinMatrixWidget
-                            username="User"
-                            onMint={() => {
-                                devLog('success', 'SBT Mint initiated');
-                                setShowTwinMatrix(false);
-                                triggerResponse(null, 'mint_sbt', false);
-                            }}
-                        />
-                    </div>
-                </div>
-            )}
+            {/* Widgets are now rendered inline in chat, not as popups */}
 
             {/* Dev Console Toggle */}
             <button

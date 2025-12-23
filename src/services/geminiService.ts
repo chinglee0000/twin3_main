@@ -83,3 +83,57 @@ export const generateAgentResponse = async (
 export const isAIEnabled = (): boolean => {
     return !!apiKey && apiKey.length > 0;
 };
+
+/**
+ * Generate dynamic suggestions based on conversation context
+ */
+export const generateSuggestions = async (
+    lastMessage: string,
+    context: string
+): Promise<string[]> => {
+    if (!apiKey || apiKey.length === 0) {
+        // Fallback suggestions when AI is not available
+        return ['View Tasks', 'Twin Matrix', 'Dashboard'];
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey });
+        const modelId = 'gemini-2.0-flash';
+
+        const prompt = `Based on the user's last action and context, generate 3 short suggestion buttons for a twin3 digital identity platform.
+
+Context: ${context}
+Last message: ${lastMessage}
+
+Rules:
+- Each suggestion should be 2-4 words max
+- Make them action-oriented
+- Relevant to twin3 features: Twin Matrix, SBT, verification, tasks
+- Return ONLY a JSON array of 3 strings, nothing else
+
+Example output: ["View Twin Matrix", "Browse Tasks", "Verify Account"]`;
+
+        const response = await ai.models.generateContent({
+            model: modelId,
+            contents: prompt,
+            config: {
+                maxOutputTokens: 100,
+                temperature: 0.7
+            }
+        });
+
+        const text = response.text || '[]';
+        // Extract JSON array from response
+        const match = text.match(/\[[\s\S]*?\]/);
+        if (match) {
+            const parsed = JSON.parse(match[0]);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed.slice(0, 4).map((s: string) => String(s));
+            }
+        }
+        return ['View Tasks', 'Twin Matrix', 'Dashboard'];
+    } catch (error) {
+        console.error("Suggestion generation error:", error);
+        return ['View Tasks', 'Twin Matrix', 'Dashboard'];
+    }
+};
