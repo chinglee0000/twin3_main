@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, Settings, Send, Sparkles, LayoutDashboard, FileText, CheckSquare, X, Coins, Clock, Users } from 'lucide-react';
+import { Menu, Settings, Send, Sparkles, LayoutDashboard, FileText, CheckSquare, X, Coins, Clock, Users, Terminal } from 'lucide-react';
 import type { Message } from '../../types';
 import type { Suggestion } from '../../types/a2ui';
 import type { TaskOpportunityPayload } from '../../types';
@@ -7,13 +7,17 @@ import { MessageBubble } from './MessageBubble';
 import { TaskDetailModal } from '../cards/TaskDetailModal';
 import { INTERACTION_INVENTORY } from '../../data/inventory';
 import { generateAgentResponse, isAIEnabled } from '../../services/geminiService';
+import { TwinMatrixWidget, DevConsole, devLog } from '../widgets';
+
 export const ChatLayout: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const [inputValue, setInputValue] = useState('');
-    const [sidebarOpen, setSidebarOpen] = useState(false); // Closed by default
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<TaskOpportunityPayload | null>(null);
+    const [showDevConsole, setShowDevConsole] = useState(false);
+    const [showTwinMatrix, setShowTwinMatrix] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const hasStarted = useRef(false);
@@ -92,6 +96,12 @@ export const ChatLayout: React.FC = () => {
 
             setMessages(prev => [...prev, aiMsg]);
             setSuggestions(node.suggestedActions || []);
+
+            // Handle widget rendering
+            if (node.response.widget === 'twin_matrix') {
+                setShowTwinMatrix(true);
+                devLog('info', 'Rendering Twin Matrix widget');
+            }
         } else if (input && isAIEnabled()) {
             // Use Gemini AI for unmatched queries
             const history = messages.map(m => ({
@@ -881,6 +891,61 @@ export const ChatLayout: React.FC = () => {
                     onAccept={handleAcceptTask}
                 />
             )}
+
+            {/* Twin Matrix Widget Modal */}
+            {showTwinMatrix && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '16px'
+                }} onClick={() => setShowTwinMatrix(false)}>
+                    <div onClick={e => e.stopPropagation()}>
+                        <TwinMatrixWidget
+                            username="User"
+                            onMint={() => {
+                                devLog('success', 'SBT Mint initiated');
+                                setShowTwinMatrix(false);
+                                triggerResponse(null, 'mint_sbt', false);
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Dev Console Toggle */}
+            <button
+                onClick={() => setShowDevConsole(!showDevConsole)}
+                style={{
+                    position: 'fixed',
+                    bottom: '16px',
+                    left: '16px',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '12px',
+                    background: showDevConsole ? 'rgba(48, 209, 88, 0.2)' : 'var(--glass-bg)',
+                    border: showDevConsole ? '1px solid rgba(48, 209, 88, 0.3)' : '1px solid var(--glass-border)',
+                    color: showDevConsole ? '#30d158' : 'var(--color-text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    zIndex: 100
+                }}
+            >
+                <Terminal size={18} />
+            </button>
+
+            {/* Dev Console */}
+            <DevConsole
+                isOpen={showDevConsole}
+                onClose={() => setShowDevConsole(false)}
+            />
         </div>
     );
 };

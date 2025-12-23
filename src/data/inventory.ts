@@ -43,6 +43,24 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
     },
 
     // ============================================================
+    // 1.5 TWIN MATRIX - 256D VISUALIZATION
+    // ============================================================
+    {
+        id: 'twin_matrix',
+        triggers: ['matrix', 'twin matrix', '256d', 'profile'],
+        response: {
+            text: "Here's your Twin Matrix — a 256-dimensional representation of your authentic self across 6 core dimensions. This forms the foundation of your soulbound identity in the AI era.",
+            delay: 600,
+            widget: 'twin_matrix'
+        },
+        suggestedActions: [
+            { label: 'Mint SBT', payload: 'mint_sbt' },
+            { label: 'Browse Tasks', payload: 'browse_tasks' },
+            { label: 'Back to Home', payload: 'menu' }
+        ]
+    },
+
+    // ============================================================
     // 2. TASK OPPORTUNITY
     // ============================================================
     {
