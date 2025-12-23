@@ -1,13 +1,12 @@
 import { Sparkles, User } from 'lucide-react';
 import type { Message } from '../../types';
-import { Card } from '../cards/Card';
 
 interface MessageBubbleProps {
     message: Message;
     onAction?: (actionId: string) => void;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onAction }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     const isUser = message.role === 'user';
 
     return (
@@ -51,34 +50,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onAction 
                 </div>
 
                 {/* Text Content */}
-                {message.type === 'text' && (
-                    <div style={{
-                        color: 'var(--color-text-primary)',
-                        fontSize: '14px',
-                        lineHeight: '1.6',
-                        whiteSpace: 'pre-line'
-                    }}>
-                        {message.content}
-                    </div>
-                )}
-
-                {/* Card Content */}
-                {message.type === 'card' && message.cardData && (
-                    <div style={{ marginTop: '8px' }}>
-                        {message.content && (
-                            <div style={{
-                                color: 'var(--color-text-primary)',
-                                fontSize: '14px',
-                                lineHeight: '1.6',
-                                marginBottom: '16px',
-                                whiteSpace: 'pre-line'
-                            }}>
-                                {message.content}
-                            </div>
-                        )}
-                        <Card data={message.cardData} onAction={onAction} />
-                    </div>
-                )}
+                <div style={{
+                    color: 'var(--color-text-primary)',
+                    fontSize: '14px',
+                    lineHeight: '1.6',
+                    whiteSpace: 'pre-line'
+                }}>
+                    {message.content}
+                </div>
             </div>
         </div>
     );

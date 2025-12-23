@@ -6,7 +6,7 @@ import type { TaskOpportunityPayload } from '../../types';
 import { MessageBubble } from './MessageBubble';
 import { TaskDetailModal } from '../cards/TaskDetailModal';
 import { INTERACTION_INVENTORY } from '../../data/inventory';
-
+import { generateAgentResponse, isAIEnabled } from '../../services/geminiService';
 export const ChatLayout: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -51,7 +51,7 @@ export const ChatLayout: React.FC = () => {
         const match = INTERACTION_INVENTORY.find(node =>
             node.triggers.some(trigger => lowerText.includes(trigger.toLowerCase()))
         );
-        return match || INTERACTION_INVENTORY.find(n => n.id === 'fallback')!;
+        return match || null; // Return null if no match, so we can use AI
     };
 
     const triggerResponse = async (input: string | null, nodeId: string | null = null, showUserMessage = true) => {
@@ -74,24 +74,63 @@ export const ChatLayout: React.FC = () => {
             node = INTERACTION_INVENTORY.find(n => n.id === nodeId)!;
         } else if (input) {
             node = findNode(input);
-        } else {
-            node = INTERACTION_INVENTORY.find(n => n.id === 'fallback')!;
         }
 
-        const delay = node.response.delay || 500;
-        await new Promise(r => setTimeout(r, delay));
+        // If we found a matching node, use it
+        if (node) {
+            const delay = node.response.delay || 500;
+            await new Promise(r => setTimeout(r, delay));
 
-        const aiMsg: Message = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            type: node.response.card ? 'card' : 'text',
-            content: node.response.text,
-            cardData: node.response.card,
-            timestamp: Date.now(),
-        };
+            const aiMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                type: node.response.card ? 'card' : 'text',
+                content: node.response.text,
+                cardData: node.response.card,
+                timestamp: Date.now(),
+            };
 
-        setMessages(prev => [...prev, aiMsg]);
-        setSuggestions(node.suggestedActions || []);
+            setMessages(prev => [...prev, aiMsg]);
+            setSuggestions(node.suggestedActions || []);
+        } else if (input && isAIEnabled()) {
+            // Use Gemini AI for unmatched queries
+            const history = messages.map(m => ({
+                role: m.role as 'user' | 'assistant',
+                content: m.content
+            }));
+
+            const response = await generateAgentResponse(input, history);
+
+            const aiMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                type: 'text',
+                content: response.text,
+                timestamp: Date.now(),
+            };
+
+            setMessages(prev => [...prev, aiMsg]);
+
+            // Show default suggestions after AI response
+            const fallbackNode = INTERACTION_INVENTORY.find(n => n.id === 'fallback');
+            setSuggestions(fallbackNode?.suggestedActions || []);
+        } else {
+            // Fallback when no AI available
+            const fallbackNode = INTERACTION_INVENTORY.find(n => n.id === 'fallback')!;
+            await new Promise(r => setTimeout(r, 300));
+
+            const aiMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                type: 'text',
+                content: fallbackNode.response.text,
+                timestamp: Date.now(),
+            };
+
+            setMessages(prev => [...prev, aiMsg]);
+            setSuggestions(fallbackNode.suggestedActions || []);
+        }
+
         setIsTyping(false);
 
         // Close sidebar on mobile/tablet after action

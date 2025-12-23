@@ -1,6 +1,19 @@
-// A2UI Protocol Types (Simplified for MVP)
+// A2UI Protocol Types (Following InstaAgent Pattern)
 
 import type { CardData } from '../types';
+
+// Widget Type — Controls dynamic UI rendering
+export const WidgetType = {
+    NONE: 'none',
+    TASK_CARD: 'task_card',
+    TASK_DETAIL: 'task_detail',
+    WALLET_CONNECT: 'wallet_connect',
+    TWIN_MATRIX: 'twin_matrix',
+    VERIFICATION: 'verification',
+    FEATURE_GRID: 'feature_grid',
+} as const;
+
+export type WidgetType = typeof WidgetType[keyof typeof WidgetType];
 
 export interface A2UIComponent {
     id: string;
@@ -19,6 +32,7 @@ export interface InteractionNode {
         text: string;
         delay?: number;
         card?: CardData;
+        widget?: WidgetType;  // Optional widget to render
     };
     suggestedActions?: Suggestion[];
 }
