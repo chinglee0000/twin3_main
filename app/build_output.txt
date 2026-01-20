@@ -1,0 +1,10 @@
+
+> app@0.0.0 build
+> tsc -b && vite build
+
+src/components/HumanVerification/components/SocialProofToast.tsx(25,26): error TS6133: 'event' is declared but its value is never read.
+src/components/HumanVerification/components/VerificationLoader.tsx(17,5): error TS6133: 'methodName' is declared but its value is never read.
+src/components/HumanVerification/components/VerificationLoader.tsx(20,12): error TS6133: 'currentStep' is declared but its value is never read.
+src/components/HumanVerification/components/VerificationLoader.tsx(166,39): error TS6133: 'index' is declared but its value is never read.
+src/features/cards/TwinMatrixCard.tsx(44,31): error TS6133: 'e' is declared but its value is never read.
+src/features/chat/ChatLayout.tsx(15,1): error TS6133: 'SocialProofToast' is declared but its value is never read.

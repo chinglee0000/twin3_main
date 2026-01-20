@@ -12,7 +12,6 @@ import { web3EngineerMatrixData } from '../cards/twin-matrix/mockData';
 import { INTERACTION_INVENTORY } from '../../data/inventory';
 import { generateAgentResponse, isAIEnabled, generateSuggestions } from '../../services/geminiService';
 import { DevConsole, devLog, InstagramConnectWidget, ActiveTaskWidget, GlobalDashboardWidget, HumanVerification } from '../widgets';
-import { SocialProofToast } from '../../components/HumanVerification/components/SocialProofToast';
 
 export const ChatLayout: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);

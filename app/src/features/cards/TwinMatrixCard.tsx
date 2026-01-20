@@ -41,7 +41,7 @@ function Tooltip({ children, content }: TooltipProps) {
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const triggerRef = useRef<HTMLDivElement>(null);
 
-    const handleMouseEnter = (e: React.MouseEvent) => {
+    const handleMouseEnter = () => {
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
             setPosition({

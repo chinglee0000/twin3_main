@@ -14,10 +14,9 @@ interface VerificationLoaderProps {
 }
 
 export const VerificationLoader: React.FC<VerificationLoaderProps> = ({
-    methodName,
+    methodName: _methodName,
     onComplete,
 }) => {
-    const [currentStep, setCurrentStep] = useState(0);
     const [steps, setSteps] = useState<VerificationStep[]>([
         { id: 'connection', label: 'Establishing secure connection...', status: 'active' },
         { id: 'fingerprint', label: 'Checking device fingerprint...', status: 'pending' },
@@ -29,7 +28,6 @@ export const VerificationLoader: React.FC<VerificationLoaderProps> = ({
 
         // Step 1 -> Step 2
         const timer1 = setTimeout(() => {
-            setCurrentStep(1);
             setSteps(prev => prev.map((s, i) => ({
                 ...s,
                 status: i === 0 ? 'completed' : i === 1 ? 'active' : 'pending'
@@ -38,7 +36,6 @@ export const VerificationLoader: React.FC<VerificationLoaderProps> = ({
 
         // Step 2 -> Step 3
         const timer2 = setTimeout(() => {
-            setCurrentStep(2);
             setSteps(prev => prev.map((s, i) => ({
                 ...s,
                 status: i <= 1 ? 'completed' : 'active'
@@ -163,7 +160,7 @@ export const VerificationLoader: React.FC<VerificationLoaderProps> = ({
                         background: 'rgba(255, 255, 255, 0.1)',
                     }} />
 
-                    {steps.map((step, index) => (
+                    {steps.map((step) => (
                         <div
                             key={step.id}
                             style={{

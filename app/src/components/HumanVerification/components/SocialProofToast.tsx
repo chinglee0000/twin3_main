@@ -22,7 +22,7 @@ export const SocialProofToast: React.FC<SocialProofToastProps> = ({
         return () => clearTimeout(timer);
     }, [delay]);
 
-    const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    const handleClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
         if (reason === 'clickaway') {
             return;
         }
