@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+.DS_Store
+.vscode/
+app/node_modules/
+app/dist/
+app/dist-ssr/
+app/*.local
+app/.vscode/
+**/.DS_Store
