@@ -8,6 +8,7 @@
  * - Spiritual (rows 12-15): Orange #f08228
  */
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowRight, Info, Lock } from 'lucide-react';
 import type { TwinMatrixData } from './twin-matrix/types';
 
@@ -36,9 +37,18 @@ interface TooltipProps {
 
 function Tooltip({ children, content }: TooltipProps) {
     const [open, setOpen] = useState(false);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const triggerRef = useRef<HTMLDivElement>(null);
 
-    const handleMouseEnter = () => {
+    const handleMouseEnter = (e: React.MouseEvent) => {
+        if (triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            setPosition({
+                x: rect.left + rect.width / 2,
+                y: rect.top - 8
+            });
+        }
         timeoutRef.current = setTimeout(() => setOpen(true), 100);
     };
 
@@ -53,39 +63,44 @@ function Tooltip({ children, content }: TooltipProps) {
         };
     }, []);
 
+    const tooltipContent = open ? createPortal(
+        <div
+            role="tooltip"
+            style={{
+                position: 'fixed',
+                top: position.y,
+                left: position.x,
+                transform: 'translate(-50%, -100%)',
+                zIndex: 99999,
+                background: 'rgba(28, 28, 30, 0.95)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                fontSize: '13px',
+                color: 'var(--color-text-primary, #ffffff)',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+                whiteSpace: 'normal',
+                animation: 'fade-in 0.15s ease-out',
+                pointerEvents: 'none',
+                maxWidth: '280px',
+            }}
+        >
+            {content}
+        </div>,
+        document.body
+    ) : null;
+
     return (
         <div
+            ref={triggerRef}
             style={{ position: 'relative', display: 'inline-block' }}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
         >
             {children}
-            {open && (
-                <div
-                    role="tooltip"
-                    style={{
-                        position: 'absolute',
-                        bottom: '100%',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        marginBottom: '8px',
-                        zIndex: 50,
-                        background: 'rgba(28, 28, 30, 0.95)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        borderRadius: '8px',
-                        padding: '8px 12px',
-                        fontSize: '13px',
-                        color: 'var(--color-text-primary, #ffffff)',
-                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-                        whiteSpace: 'nowrap',
-                        animation: 'fade-in 0.15s ease-out',
-                    }}
-                >
-                    {content}
-                </div>
-            )}
+            {tooltipContent}
         </div>
     );
 }
@@ -171,53 +186,120 @@ function TwinMatrixGrid({ data }: TwinMatrixGridProps) {
                     <Tooltip
                         key={`${trait.id}-${index}`}
                         content={
-                            <div style={{ maxWidth: '200px', whiteSpace: 'normal', padding: '4px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                    <span style={{
-                                        fontWeight: 600,
-                                        fontSize: '13px',
-                                        color: trait.discovered ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'
-                                    }}>
-                                        {trait.discovered ? (trait.name || trait.id) : `Trait ${trait.id}`}
-                                    </span>
+                            <div style={{ width: '240px', padding: '4px' }}>
+                                {/* Header: Trait Name & ID */}
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'flex-start',
+                                    marginBottom: '10px',
+                                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                    paddingBottom: '8px'
+                                }}>
+                                    <div>
+                                        <div style={{
+                                            fontWeight: 700,
+                                            fontSize: '14px',
+                                            color: trait.discovered ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                            lineHeight: '1.2'
+                                        }}>
+                                            {trait.discovered ? (trait.name || trait.id) : `Locked Trait`}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '11px',
+                                            color: 'var(--color-text-dim)',
+                                            marginTop: '2px',
+                                            fontFamily: 'monospace'
+                                        }}>
+                                            ID: {trait.id}
+                                        </div>
+                                    </div>
                                     {trait.discovered && (
-                                        <span style={{
+                                        <div style={{
                                             fontSize: '10px',
                                             padding: '2px 6px',
                                             borderRadius: '4px',
-                                            backgroundColor: 'rgba(255,255,255,0.1)',
-                                            color: 'var(--color-text-secondary)'
+                                            background: DIMENSION_COLORS[trait.displayDimension as keyof typeof DIMENSION_COLORS] || '#fff',
+                                            color: 'white',
+                                            fontWeight: 600,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px'
                                         }}>
-                                            {trait.dimension}
-                                        </span>
+                                            {trait.dimension?.slice(0, 3)}
+                                        </div>
                                     )}
                                 </div>
 
                                 {trait.discovered ? (
                                     <>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                                            <span style={{ color: 'var(--color-text-secondary)' }}>Score</span>
-                                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                                                {trait.strength || 0}<span style={{ fontSize: '10px', color: 'var(--color-text-dim)' }}>/255</span>
-                                            </span>
-                                        </div>
-                                        <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginBottom: '6px' }}>
+                                        {/* Strength Bar */}
+                                        <div style={{ marginBottom: '12px' }}>
                                             <div style={{
-                                                width: `${Math.round(((trait.strength || 0) / 255) * 100)}%`,
-                                                height: '100%',
-                                                background: DIMENSION_COLORS[trait.displayDimension as keyof typeof DIMENSION_COLORS] || '#fff'
-                                            }} />
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                fontSize: '11px',
+                                                marginBottom: '4px',
+                                                color: 'var(--color-text-secondary)'
+                                            }}>
+                                                <span>Strength</span>
+                                                <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
+                                                    {Math.round(((trait.strength || 0) / 255) * 100)}%
+                                                </span>
+                                            </div>
+                                            <div style={{
+                                                width: '100%',
+                                                height: '4px',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                borderRadius: '2px',
+                                                overflow: 'hidden'
+                                            }}>
+                                                <div style={{
+                                                    width: `${Math.round(((trait.strength || 0) / 255) * 100)}%`,
+                                                    height: '100%',
+                                                    background: DIMENSION_COLORS[trait.displayDimension as keyof typeof DIMENSION_COLORS] || '#fff'
+                                                }} />
+                                            </div>
                                         </div>
+
+                                        {/* Description */}
                                         {trait.description && (
-                                            <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', lineHeight: '1.4' }}>
+                                            <div style={{
+                                                fontSize: '12px',
+                                                color: 'var(--color-text-secondary)',
+                                                lineHeight: '1.5',
+                                                marginBottom: '10px',
+                                                background: 'rgba(255,255,255,0.03)',
+                                                padding: '8px',
+                                                borderRadius: '6px'
+                                            }}>
                                                 {trait.description}
-                                            </p>
+                                            </div>
                                         )}
+
+                                        {/* Metadata Footer */}
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: '8px',
+                                            fontSize: '10px',
+                                            color: 'var(--color-text-dim)',
+                                            alignItems: 'center'
+                                        }}>
+                                            {trait.unlockedAt && (
+                                                <span>📅 {new Date(trait.unlockedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                            )}
+                                        </div>
                                     </>
                                 ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--color-text-secondary)' }}>
-                                        <Lock size={12} />
-                                        <span>完成更多驗證以解鎖</span>
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '12px 0',
+                                        color: 'var(--color-text-secondary)'
+                                    }}>
+                                        <Lock size={20} style={{ marginBottom: '8px', opacity: 0.5 }} />
+                                        <div style={{ fontSize: '12px', fontWeight: 500 }}>Trait Undiscovered</div>
+                                        <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '4px' }}>
+                                            Continue verification to unlock
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -286,7 +368,7 @@ function ProgressBar({ value, color }: ProgressBarProps) {
                 style={{
                     height: '100%',
                     width: `${value}%`,
-                    backgroundColor: color,
+                    background: color, // Changed from backgroundColor to support gradients
                     borderRadius: '3px',
                     transition: 'width 0.3s ease',
                 }}
@@ -312,14 +394,30 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
         spiritual: '#f08228',
     };
 
+    // Add CSS for fade-in animation if not already present
+    useEffect(() => {
+        const styleId = 'tooltip-animations';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                @keyframes fade-in {
+                    from { opacity: 0; transform: translate(-50%, -100%) scale(0.95); }
+                    to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }, []);
+
     return (
         <div
-            className="card card-hover animate-fade-in-scale"
+            className="card animate-fade-in-scale"
             style={{
                 width: '100%',
-                maxWidth: '420px', // Fixed max-width for PC as requested
+                maxWidth: '480px',
                 padding: 0,
-                overflow: 'hidden',
+                overflow: 'visible',
             }}
         >
             {/* Header */}
@@ -343,9 +441,9 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
                     </h3>
                     <Tooltip
                         content={
-                            <p style={{ maxWidth: '200px', whiteSpace: 'normal', fontSize: '13px' }}>
-                                Your Twin Matrix represents your unique human experience profile.
-                            </p>
+                            <div style={{ maxWidth: '200px', whiteSpace: 'normal', fontSize: '13px' }}>
+                                Your Twin Matrix represents your unique human experience profile across 256 dimensions, organized into 4 key areas: Physical, Social, Digital, and Spiritual traits.
+                            </div>
                         }
                     >
                         <button
@@ -397,7 +495,7 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
                     </div>
                     <ProgressBar
                         value={data.journeyProgress}
-                        color="linear-gradient(90deg, #137cec 0%, #8a2ce2 100%)"
+                        color="#ffffff"
                     />
                 </div>
 
@@ -460,19 +558,34 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
                 </div>
 
                 {/* Explore Button */}
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+                <div style={{ marginTop: '20px' }}>
                     <button
                         onClick={() => onExplore?.()}
-                        className="btn btn-primary"
                         style={{
-                            width: 'fit-content', // Hug container
+                            width: '100%', // 填满容器宽度
+                            padding: '12px 16px', // 稍微增加垂直 padding
+                            borderRadius: '12px',
+                            background: '#ffffff',
+                            border: '1px solid transparent',
+                            color: '#000000',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '8px',
-                            minWidth: '200px',
-                            padding: '16px 32px', // Large button padding
-                            fontSize: '16px',     // Larger font size
+                            transition: 'all 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = '#ffffff';
+                            e.currentTarget.style.border = '1px solid #ffffff';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#ffffff';
+                            e.currentTarget.style.color = '#000000';
+                            e.currentTarget.style.border = '1px solid transparent';
                         }}
                     >
                         Explore My Matrix

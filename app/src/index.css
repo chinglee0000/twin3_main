@@ -412,3 +412,32 @@ textarea::placeholder {
 .glow-text {
   text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
 }
+
+/* ==================================================================
+   RESPONSIVE WIDGET STYLES
+   ================================================================== */
+
+/* Widget responsive container */
+.widget-container {
+  width: 100%;
+}
+
+/* Mobile breakpoint - widgets fill width */
+@media (max-width: 767px) {
+  .card {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  .widget-container .card {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* Tablet and desktop - maintain original max-widths */
+@media (min-width: 768px) {
+  .widget-container .card {
+    width: auto;
+  }
+}

@@ -1,5 +1,14 @@
 import type { VerificationMethod } from '../types';
 
+/**
+ * Verification Methods Configuration
+ * Based on humanityIndexBoost.md specification
+ * 
+ * Weight represents the contribution to Humanity Index (0-255)
+ * Formula: Humanity Index = Σ(weight_i × completion_i) × 255
+ * 
+ * Note: recaptcha-v2 removed per user request
+ */
 export const verificationMethods: VerificationMethod[] = [
     {
         id: 'recaptcha-v3',
@@ -8,22 +17,16 @@ export const verificationMethods: VerificationMethod[] = [
         weight: 0.20
     },
     {
-        id: 'recaptcha-v2',
-        name: 'Google reCAPTCHA v2',
-        icon: 'Shield',
-        weight: 0.15
+        id: 'sms-verification',
+        name: 'SMS Verification',
+        icon: 'Smartphone',
+        weight: 0.25
     },
     {
         id: 'biometric-liveness',
         name: 'Liveness Detection',
         icon: 'UserCheck',
         weight: 0.40
-    },
-    {
-        id: 'sms-verification',
-        name: 'SMS Verification',
-        icon: 'Smartphone',
-        weight: 0.25
     },
     {
         id: 'social-auth',
@@ -63,25 +66,10 @@ export const verificationMethods: VerificationMethod[] = [
     }
 ];
 
-// Initial score configuration to reach ~135 (0.53 * 255 = 135.15 -> 135)
-export const defaultCompletedMethods = [
-    'recaptcha-v3',        // 0.20
-    'behavioral-biometrics', // 0.16
-    'image-puzzle'         // 0.12
-    // Total: 0.48 * 255 = 122.4. 
-    // Wait, my previous calc for 0.53 was different methods?
-    // User didn't specify defaultCompletedMethods in Task 4 text, but I should probably keep it compatible.
-    // 135 / 255 = 0.529.
-    // 0.20 + 0.16 + 0.12 = 0.48. 0.48 * 255 = 122.
-    // To get ~135, I need ~0.53.
-    // 0.20 + 0.16 + x = 0.53 => x = 0.17.
-    // Let's add 'social-auth' (0.18)? 0.20+0.16+0.18 = 0.54. 0.54 * 255 = 137.
-    // I will stick to the existing `defaultCompletedMethods` array exported in the previous file version if possible, OR just use a reasonable default.
-    // The user's prompt DOES NOT Includes `defaultCompletedMethods`.
-    // BUT `features/widgets/HumanVerification.tsx` uses it.
-    // I will keep `defaultCompletedMethods` but maybe adjust comments.
-];
-
+/**
+ * Calculate Humanity Index from completed verification methods
+ * Returns a value between 0 and 255
+ */
 export function calculateHumanityIndex(completedMethodIds: string[]): number {
     const totalWeight = completedMethodIds.reduce(
         (sum, id) => {
@@ -90,5 +78,13 @@ export function calculateHumanityIndex(completedMethodIds: string[]): number {
         },
         0
     );
-    return Math.round(Math.min(totalWeight, 1.0) * 255);
+
+    // Cap at 1.0 to prevent exceeding 255
+    const normalizedWeight = Math.min(totalWeight, 1.0);
+    return Math.round(normalizedWeight * 255);
 }
+
+/**
+ * Default completed methods for POC demo
+ */
+export const defaultCompletedMethods: string[] = [];

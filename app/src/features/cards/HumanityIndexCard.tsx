@@ -155,7 +155,7 @@ export const HumanityIndexCard: React.FC<HumanityIndexCardProps> = ({
                     </h4>
                     <div style={{
                         fontSize: '10px',
-                        color: 'var(--color-info, #8B5CF6)',
+                        color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px'

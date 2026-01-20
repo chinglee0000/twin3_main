@@ -1,38 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Shield } from 'lucide-react';
+
+// Import from HumanVerification module
 import {
-    Shield,
-    ShieldCheck,
-    Smartphone,
-    UserCheck,
-    Users,
-    Wallet,
-    Award,
-    Puzzle,
-    Fingerprint,
-    Key,
-    ChevronRight,
-    ChevronDown,
-    CheckCircle,
-    LayoutGrid
-} from 'lucide-react';
-import { verificationMethods, calculateHumanityIndex, defaultCompletedMethods } from '../../components/HumanVerification/data/verificationMethods';
-import type { VerificationMethod } from '../../components/HumanVerification/types';
+    WIDGET_STATES,
+    ANIMATION_DURATION,
+    verificationMethods,
+} from '../../components/HumanVerification';
+import type { FlowState, VerificationMethod } from '../../components/HumanVerification/types';
 
-// Map string icon names to components
-const ICON_MAP: Record<string, React.ElementType> = {
-    'ShieldCheck': ShieldCheck,
-    'Smartphone': Smartphone,
-    'UserCheck': UserCheck,
-    'Users': Users,
-    'Wallet': Wallet,
-    'Award': Award,
-    'Puzzle': Puzzle,
-    'Fingerprint': Fingerprint,
-    'Key': Key,
-    'Shield': Shield // Logic might still request Shield if old data, but new data has ShieldCheck
-};
+// Import sub-components (removed HumanityStatusCard - not needed)
+import { VerificationOptions } from '../../components/HumanVerification/components/VerificationOptions';
+import { VerificationLoader } from '../../components/HumanVerification/components/VerificationLoader';
 
-export type FlowState = 'initial' | 'selecting_method' | 'verifying' | 'verification_complete' | 'matrix_view' | 'simulate_kol';
+// Import TwinMatrixCard (16x16 grid)
+import { TwinMatrixCard } from '../cards/TwinMatrixCard';
+import {
+    initialMatrixData,
+    travelKOLMatrixData,
+} from '../../components/HumanVerification/data/mockProfiles';
+import type { TwinMatrixData } from '../cards/twin-matrix/types';
 
 interface HumanVerificationProps {
     onClose?: () => void;
@@ -43,407 +30,429 @@ interface HumanVerificationProps {
 export const HumanVerification: React.FC<HumanVerificationProps> = ({
     onClose,
     onComplete,
-    initialScore = calculateHumanityIndex(defaultCompletedMethods) // Use default methods to calc initial score (~135)
+    initialScore = 0,
 }) => {
-    const [flowState, setFlowState] = useState<FlowState>('initial');
+    // Start directly at method selection - no need to ask again
+    const [flowState, setFlowState] = useState<FlowState>(WIDGET_STATES.SELECTING);
     const [score, setScore] = useState(initialScore);
-    const [completedMethods, setCompletedMethods] = useState<string[]>(defaultCompletedMethods);
-    const [expanded, setExpanded] = useState(false);
+    const [displayScore, setDisplayScore] = useState(initialScore);
+    const [completedMethods, setCompletedMethods] = useState<string[]>([]);
     const [selectedMethod, setSelectedMethod] = useState<VerificationMethod | null>(null);
+    const [matrixData, setMatrixData] = useState<TwinMatrixData>(initialMatrixData);
 
-    // Filter visible methods based on expansion
-    const visibleMethods = expanded ? verificationMethods : verificationMethods.slice(0, 4);
-    const hiddenCount = verificationMethods.length - 4;
+    // Animate score changes
+    useEffect(() => {
+        let startTime: number;
+        let animationFrameId: number;
+        const startScore = displayScore;
+        const targetScore = score;
 
-    const handleMethodClick = (method: VerificationMethod) => {
-        if (completedMethods.includes(method.id)) return; // Prevent re-verification
+        if (startScore === targetScore) return;
+
+        const animate = (timestamp: number) => {
+            if (!startTime) startTime = timestamp;
+            const progress = timestamp - startTime;
+            const duration = 1500; // 1.5 seconds
+
+            if (progress < duration) {
+                // Ease out cubic
+                const ratio = 1 - Math.pow(1 - progress / duration, 3);
+                const current = startScore + (targetScore - startScore) * ratio;
+                setDisplayScore(current);
+                animationFrameId = requestAnimationFrame(animate);
+            } else {
+                setDisplayScore(targetScore);
+            }
+        };
+
+        animationFrameId = requestAnimationFrame(animate);
+
+        return () => cancelAnimationFrame(animationFrameId);
+    }, [score]);
+
+    // Method selection handler
+    const handleMethodSelect = useCallback((methodId: string) => {
+        const method = verificationMethods.find(m => m.id === methodId);
+        if (!method || completedMethods.includes(methodId)) return;
 
         setSelectedMethod(method);
-        setFlowState('verifying');
+        setFlowState(WIDGET_STATES.VERIFYING);
+    }, [completedMethods]);
 
-        // Simulate verification process
+    const handleVerificationComplete = useCallback(() => {
+        if (!selectedMethod) return;
+
+        // Add to completed methods
+        const newCompletedMethods = [...completedMethods, selectedMethod.id];
+        setCompletedMethods(newCompletedMethods);
+
+        // Calculate new score based on completed weights
+        // Formula: score = Σ(weight_i) × 255
+        const totalWeight = newCompletedMethods.reduce((sum, id) => {
+            const method = verificationMethods.find(m => m.id === id);
+            return sum + (method?.weight || 0);
+        }, 0);
+        const newScore = Math.round(Math.min(totalWeight, 1.0) * 255);
+        setScore(newScore);
+
+        // Update matrix data with new score
+        const updatedMatrixData = {
+            ...initialMatrixData,
+            humanityIndex: newScore,
+            avgStrength: Math.round((newScore / 255) * 100),
+            dimensions: {
+                ...initialMatrixData.dimensions,
+                physical: {
+                    ...initialMatrixData.dimensions.physical,
+                    percentage: Math.round((newScore / 255) * 100),
+                    discovered: Math.max(initialMatrixData.dimensions.physical.discovered, newScore > 0 ? 1 : 0)
+                }
+            },
+            traits: initialMatrixData.traits.map(trait =>
+                trait.id === '00' ? { ...trait, strength: newScore, discovered: true } : trait
+            )
+        };
+        setMatrixData(updatedMatrixData);
+
+        // Return to options list (user can do more verifications)
+        // 移除自動文字回覆，直接返回選擇頁面
         setTimeout(() => {
-            const newCompletedMethods = [...completedMethods, method.id];
-            const newScore = calculateHumanityIndex(newCompletedMethods);
+            setFlowState(WIDGET_STATES.SELECTING);
+            setSelectedMethod(null);
+            onComplete?.(newScore);
+        }, ANIMATION_DURATION.FADE_IN);
+    }, [selectedMethod, completedMethods, onComplete]);
 
-            setCompletedMethods(newCompletedMethods);
-            setScore(newScore);
-            setFlowState('verification_complete');
-        }, 2000);
-    };
+    const handleViewMatrix = useCallback(() => {
+        setFlowState(WIDGET_STATES.MATRIX_VIEW);
 
-    const handleVerificationComplete = () => {
-        setFlowState('matrix_view');
-        onComplete?.(score);
-    };
+        // 滾動到 Twin Matrix 卡片
+        setTimeout(() => {
+            const matrixElement = document.querySelector('[data-twin-matrix]');
+            if (matrixElement) {
+                matrixElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            }
+        }, 100); // 等待 DOM 更新後再滾動
+    }, []);
 
-    // Render Helpers
+    const handleSimulateKOL = useCallback(() => {
+        setMatrixData(travelKOLMatrixData);
+        setFlowState(WIDGET_STATES.SIMULATE_KOL);
+    }, []);
+
+    const handleBackToMyMatrix = useCallback(() => {
+        setMatrixData(initialMatrixData);
+        setFlowState(WIDGET_STATES.MATRIX_VIEW);
+    }, []);
+
+    // Render header with progress bar
     const renderHeader = () => (
-        <div className="widget-header" style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
+        <div style={{
+            padding: '16px 20px',
             borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-            padding: '16px 20px'
+            background: 'linear-gradient(135deg, rgba(40, 40, 45, 0.5), rgba(30, 30, 35, 0.5))',
+            position: 'relative',
+            overflow: 'hidden',
         }}>
+            {/* Background glow effect */}
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '96px',
+                height: '96px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                filter: 'blur(40px)',
+                borderRadius: '50%',
+                pointerEvents: 'none',
+            }} />
+
+            {/* Title row */}
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                width: '100%'
+                marginBottom: '12px',
+                position: 'relative',
+                zIndex: 1,
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Shield size={18} color="#8B5CF6" fill="rgba(139, 92, 246, 0.2)" />
-                    <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                        Verification Tasks
-                    </span>
+                    <Shield size={20} color="#ffffff" />
+                    <div style={{
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        color: 'var(--color-text-primary)',
+                        lineHeight: 1.2,
+                    }}>
+                        Verify Humanity
+                    </div>
                 </div>
+                {/* Score badge */}
                 <div style={{
                     padding: '4px 10px',
-                    background: 'rgba(139, 92, 246, 0.1)',
-                    border: '1px solid rgba(139, 92, 246, 0.2)',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: '#8B5CF6',
-                    letterSpacing: '0.5px'
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    fontFamily: 'monospace',
+                    color: '#ffffff',
                 }}>
-                    SCORE: {score}
+                    SCORE: {Math.round(displayScore)}
                 </div>
             </div>
 
-            {/* Progress Bar */}
-            <div style={{ width: '100%' }}>
+            {/* Progress bar 0-255 */}
+            <div style={{
+                position: 'relative',
+                zIndex: 1,
+                padding: '0 4px', // 與 header 內容對齊
+            }}>
                 <div style={{
-                    display: 'flex', justifyContent: 'space-between', marginBottom: '8px',
-                    fontSize: '11px', fontWeight: 500, color: 'var(--color-text-dim)'
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '12px',
+                    color: 'var(--color-text-secondary)',
+                    marginBottom: '6px',
                 }}>
                     <span>Humanity Index</span>
-                    <span>{score} / 255</span>
+                    <span style={{ fontWeight: 600 }}>{Math.round(displayScore)}/255</span>
                 </div>
                 <div style={{
                     width: '100%',
                     height: '6px',
-                    background: 'rgba(255, 255, 255, 0.05)',
+                    background: 'rgba(255, 255, 255, 0.08)',
                     borderRadius: '3px',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
                 }}>
                     <div style={{
-                        width: `${Math.min((score / 255) * 100, 100)}%`,
+                        width: `${(displayScore / 255) * 100}%`,
                         height: '100%',
-                        background: '#8B5CF6',
-                        transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+                        background: '#ffffff',
+                        borderRadius: '3px',
+                        transition: 'width 0.5s ease',
                     }} />
                 </div>
             </div>
         </div>
     );
 
-    if (flowState === 'verifying') {
-        return (
-            <div className="card animate-fade-in" style={{
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                overflow: 'hidden',
-                minWidth: '320px',
-                padding: 0
-            }}>
-                {renderHeader()}
-                <div className="widget-content" style={{ textAlign: 'center' }}>
-                    <div style={{
-                        width: '64px', height: '64px', margin: '0 auto 20px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        position: 'relative'
-                    }}>
-                        <div style={{
-                            position: 'absolute', inset: 0, borderRadius: '50%',
-                            border: '3px solid rgba(139, 92, 246, 0.1)',
-                        }} />
-                        <div style={{
-                            position: 'absolute', inset: 0, borderRadius: '50%',
-                            border: '3px solid #8B5CF6',
-                            borderTopColor: 'transparent',
-                            animation: 'spin 1s linear infinite'
-                        }} />
-                        {selectedMethod?.icon && React.createElement(selectedMethod.icon, {
-                            size: 24,
-                            color: '#8B5CF6'
-                        })}
-                    </div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                        Verifying...
-                    </h3>
-                    <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-                        Please wait while we verify your {selectedMethod?.name}
-                    </p>
-                </div>
-                <style>{`
-                    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                `}</style>
-            </div>
-        );
-    }
+    // Card wrapper styles with responsive alignment
+    const cardStyle: React.CSSProperties = {
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        width: '100%',
+        maxWidth: '380px',
+        // Mobile: 置中, Desktop/Laptop: 靠左
+        margin: window.innerWidth < 768 ? '0 auto' : '0',
+    };
 
-    if (flowState === 'verification_complete') {
+    // Method selection state - STARTS HERE (no initial "prove" step)
+    if (flowState === WIDGET_STATES.SELECTING) {
         return (
-            <div className="card animate-fade-in" style={{
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                overflow: 'hidden',
-                minWidth: '320px',
-                padding: 0
-            }}>
-                {renderHeader()}
-                <div className="widget-content" style={{ textAlign: 'center' }}>
-                    <div style={{
-                        width: '64px', height: '64px', borderRadius: '50%',
-                        background: 'rgba(139, 92, 246, 0.15)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        margin: '0 auto 20px',
-                        boxShadow: '0 0 20px rgba(139, 92, 246, 0.2)'
-                    }}>
-                        <CheckCircle size={32} color="#8B5CF6" />
-                    </div>
-                    <h3 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                        Verification Successful
-                    </h3>
-                    <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-                        Your Human Score has increased by {selectedMethod?.weight} points.
-                    </p>
-                    <button
-                        onClick={handleVerificationComplete}
-                        className="btn btn-primary"
-                        style={{
-                            width: '100%', padding: '12px', borderRadius: '12px',
-                            background: '#8B5CF6', color: 'white',
-                            fontWeight: 600, border: 'none', cursor: 'pointer'
-                        }}
-                    >
-                        Continue
-                    </button>
-                </div>
-            </div>
-        );
-    }
+            <div className="card animate-fade-in" style={cardStyle}>
 
-    if (flowState === 'matrix_view') {
-        return (
-            <div className="card animate-fade-in" style={{
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                overflow: 'hidden',
-                minWidth: '320px',
-                padding: 0
-            }}>
                 {renderHeader()}
-                <div className="widget-content" style={{ textAlign: 'center', padding: '32px 24px' }}>
-                    <LayoutGrid size={48} color="var(--color-primary)" style={{ marginBottom: '16px', opacity: 0.8 }} />
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                        Twin Matrix Unlocked
-                    </h3>
-                    <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-                        You now have access to the decentralized identity matrix.
-                    </p>
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ padding: '8px 0' }}>
+                    <VerificationOptions
+                        methods={verificationMethods}
+                        completedMethods={completedMethods}
+                        onSelect={handleMethodSelect}
+                    />
+                </div>
+                {/* Footer buttons */}
+                <div style={{
+                    padding: '12px 20px',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                    display: 'flex',
+                    gap: '10px',
+                }}>
+                    {/* View My Matrix button - shows when at least one verification is complete */}
+                    {completedMethods.length > 0 && (
                         <button
-                            onClick={() => setFlowState('simulate_kol')}
+                            onClick={handleViewMatrix}
                             style={{
-                                flex: 1, padding: '10px', borderRadius: '8px',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                color: 'var(--color-text-primary)', cursor: 'pointer'
-                            }}
-                        >
-                            Simulate KOL
-                        </button>
-                        <button
-                            onClick={() => onClose?.()}
-                            style={{
-                                flex: 1, padding: '10px', borderRadius: '8px',
-                                background: 'var(--color-primary)',
-                                border: 'none',
-                                color: 'white', cursor: 'pointer'
-                            }}
-                        >
-                            Done
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (flowState === 'simulate_kol') {
-        return (
-            <div className="card animate-fade-in" style={{
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                overflow: 'hidden',
-                minWidth: '320px',
-                padding: 0
-            }}>
-                {renderHeader()}
-                <div className="widget-content" style={{ textAlign: 'center', padding: '32px 24px' }}>
-                    <Users size={48} color="#A855F7" style={{ marginBottom: '16px', opacity: 0.8 }} />
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                        Simulating KOL Traffic
-                    </h3>
-                    <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-                        Analyzing social graph interaction patterns...
-                    </p>
-                    <button
-                        onClick={() => onClose?.()}
-                        style={{
-                            width: '100%', padding: '10px', borderRadius: '8px',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: 'var(--color-text-primary)', cursor: 'pointer'
-                        }}
-                    >
-                        Close Simulation
-                    </button>
-                </div>
-            </div>
-        )
-    }
-
-    // Default: Initial / Selecting Method
-    return (
-        <div className="card animate-fade-in" style={{
-            background: 'var(--glass-bg)',
-            border: '1px solid var(--glass-border)',
-            overflow: 'hidden',
-            minWidth: '320px', // Ensure card width
-            padding: 0
-        }}>
-            {renderHeader()}
-
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {visibleMethods.map((method) => {
-                    const isCompleted = completedMethods.includes(method.id);
-                    return (
-                        <div
-                            key={method.id}
-                            onClick={() => handleMethodClick(method)}
-                            className="widget-list-item"
-                            style={{
+                                flex: 1,
+                                padding: '10px 16px',
+                                borderRadius: '12px',
+                                background: '#ffffff',
+                                border: '1px solid transparent',
+                                color: '#000000',
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '12px',
-                                borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
-                                cursor: isCompleted ? 'default' : 'pointer',
-                                transition: 'background 0.2s',
-                                opacity: isCompleted ? 0.6 : 1
+                                justifyContent: 'center',
+                                gap: '8px',
+                                transition: 'all 0.2s ease',
                             }}
-                            onMouseEnter={(e) => !isCompleted && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)')}
-                            onMouseLeave={(e) => !isCompleted && (e.currentTarget.style.background = 'transparent')}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = '#ffffff';
+                                e.currentTarget.style.border = '1px solid #ffffff';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#ffffff';
+                                e.currentTarget.style.color = '#000000';
+                                e.currentTarget.style.border = '1px solid transparent';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
                         >
-                            {/* Icon Box */}
-                            <div style={{
-                                width: '40px', height: '40px',
-                                borderRadius: '12px',
-                                background: isCompleted ? 'rgba(48, 209, 88, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                flexShrink: 0
-                            }}>
-                                {isCompleted ? (
-                                    <CheckCircle size={20} color="#30D158" />
-                                ) : (
-                                    React.createElement(ICON_MAP[method.icon] || Shield, { size: 20, color: 'var(--color-text-secondary)' })
-                                )}
-                            </div>
+                            View My Matrix
+                        </button>
+                    )}
+                    {onClose && (
+                        <button
+                            onClick={onClose}
+                            style={{
+                                flex: completedMethods.length > 0 ? 'none' : 1,
+                                padding: completedMethods.length > 0 ? '12px 16px' : '10px',
+                                borderRadius: completedMethods.length > 0 ? '10px' : '8px',
+                                background: 'transparent',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                color: 'var(--color-text-secondary)',
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            {completedMethods.length > 0 ? 'Later' : 'Skip for now'}
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
-                            {/* Content */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{
-                                    fontSize: '15px', fontWeight: 500, color: isCompleted ? '#30D158' : 'var(--color-text-primary)',
-                                    marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px'
-                                }}>
-                                    {method.name}
-                                </div>
-                                {/* Description removed as it's not in the type definition */}
-                            </div>
+    // Verifying state
+    if (flowState === WIDGET_STATES.VERIFYING) {
+        return (
+            <div className="card animate-fade-in" style={cardStyle}>
+                {renderHeader()}
+                <VerificationLoader
+                    methodName={selectedMethod?.name || 'Google reCAPTCHA v3'}
+                    onComplete={handleVerificationComplete}
+                />
+            </div>
+        );
+    }
 
-                            {/* Right Points */}
-                            <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                {isCompleted ? (
-                                    <div style={{
-                                        padding: '4px 8px',
-                                        background: 'rgba(48, 209, 88, 0.1)',
-                                        borderRadius: '6px',
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                        color: '#30D158'
-                                    }}>
-                                        Completed
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div style={{
-                                            padding: '4px 8px',
-                                            background: 'rgba(139, 92, 246, 0.1)',
-                                            borderRadius: '6px',
-                                            fontSize: '12px',
-                                            fontWeight: 600,
-                                            color: '#8B5CF6'
-                                        }}>
-                                            +{Math.round(method.weight * 255)}
-                                        </div>
-                                        <ChevronRight size={16} color="var(--color-text-dim)" />
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-
-                {/* Show More */}
-                {!expanded && hiddenCount > 0 && (
-                    <div
-                        onClick={() => setExpanded(true)}
-                        style={{
-                            padding: '16px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                            fontSize: '13px', color: 'var(--color-text-secondary)',
-                            cursor: 'pointer',
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
-                        }}
-                    >
-                        Show {hiddenCount} more options
-                        <ChevronDown size={14} />
+    // Matrix view state - Using 16x16 TwinMatrixCard (appears below verification card)
+    if (flowState === WIDGET_STATES.MATRIX_VIEW) {
+        return (
+            <div className="animate-fade-in" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                width: '100%',
+                maxWidth: '500px', // 確保有足夠寬度給 Twin Matrix
+                // Mobile: 置中, Desktop/Laptop: 靠左
+                alignItems: window.innerWidth < 768 ? 'center' : 'flex-start',
+            }}>
+                {/* 保留原本的 Verification Tasks 卡片 */}
+                <div className="card" style={{
+                    ...cardStyle,
+                    maxWidth: '380px', // Verification card 保持較小寬度
+                }}>
+                    {renderHeader()}
+                    <div style={{ padding: '8px 0' }}>
+                        <VerificationOptions
+                            methods={verificationMethods}
+                            completedMethods={completedMethods}
+                            onSelect={handleMethodSelect}
+                        />
                     </div>
-                )}
-            </div>
+                    {/* Footer buttons */}
+                    <div style={{
+                        padding: '12px 20px',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                        display: 'flex',
+                        gap: '10px',
+                    }}>
+                        {/* View My Matrix button - now shows "Hide Matrix" */}
+                        {completedMethods.length > 0 && (
+                            <button
+                                onClick={() => setFlowState(WIDGET_STATES.SELECTING)}
+                                style={{
+                                    flex: 1,
+                                    padding: '10px 16px',
+                                    borderRadius: '12px',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                    color: 'var(--color-text-secondary)',
+                                    fontSize: '14px',
+                                    fontWeight: 500,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    transition: 'all 0.2s ease',
+                                }}
+                            >
+                                Hide Matrix
+                            </button>
+                        )}
+                        {onClose && (
+                            <button
+                                onClick={onClose}
+                                style={{
+                                    flex: completedMethods.length > 0 ? 'none' : 1,
+                                    padding: completedMethods.length > 0 ? '12px 16px' : '10px',
+                                    borderRadius: completedMethods.length > 0 ? '10px' : '8px',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    color: 'var(--color-text-secondary)',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {completedMethods.length > 0 ? 'Later' : 'Skip for now'}
+                            </button>
+                        )}
+                    </div>
+                </div>
 
-            {/* Footer */}
-            <div style={{ padding: '16px 20px', display: 'flex', gap: '10px' }}>
-                <button
-                    style={{
-                        padding: '10px 16px', borderRadius: '10px',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                        color: 'var(--color-text-secondary)',
-                        fontSize: '13px', fontWeight: 500,
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '6px'
-                    }}
-                >
-                    Why do I need this?
-                </button>
-                <button
-                    onClick={() => onClose?.()}
-                    style={{
-                        padding: '10px 16px', borderRadius: '10px',
-                        background: 'transparent',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        color: 'var(--color-text-secondary)',
-                        fontSize: '13px', fontWeight: 500,
-                        cursor: 'pointer'
-                    }}
-                >
-                    Skip for now
-                </button>
+                {/* Twin Matrix Card 接著出現 - 給它完整寬度 */}
+                <div data-twin-matrix style={{ width: '100%' }}>
+                    <TwinMatrixCard
+                        data={matrixData}
+                        onExplore={handleSimulateKOL} // 直接跳轉到 KOL 模擬
+                    />
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
+
+    // Simulate KOL state
+    if (flowState === WIDGET_STATES.SIMULATE_KOL) {
+        return (
+            <div className="animate-fade-in" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                width: '100%',
+                maxWidth: '500px',
+                // Mobile: 置中, Desktop/Laptop: 靠左
+                margin: window.innerWidth < 768 ? '0 auto' : '0',
+            }}>
+
+
+                {/* KOL's Twin Matrix - 16x16 grid with multiple traits */}
+                <TwinMatrixCard
+                    data={matrixData}
+                    onExplore={handleBackToMyMatrix} // KOL 狀態下點擊返回自己的 Matrix
+                />
+            </div>
+        );
+    }
+
+    return null;
 };

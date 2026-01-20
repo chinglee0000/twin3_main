@@ -12,6 +12,7 @@ import { web3EngineerMatrixData } from '../cards/twin-matrix/mockData';
 import { INTERACTION_INVENTORY } from '../../data/inventory';
 import { generateAgentResponse, isAIEnabled, generateSuggestions } from '../../services/geminiService';
 import { DevConsole, devLog, InstagramConnectWidget, ActiveTaskWidget, GlobalDashboardWidget, HumanVerification } from '../widgets';
+import { SocialProofToast } from '../../components/HumanVerification/components/SocialProofToast';
 
 export const ChatLayout: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -1186,7 +1187,8 @@ export const ChatLayout: React.FC = () => {
                                                 onComplete={(score) => {
                                                     devLog('success', `Verification Complete. Score: ${score}`);
                                                     setIsVerified(true);
-                                                    triggerResponse(null, 'verification_success', false);
+                                                    // 移除自動文字回覆
+                                                    // triggerResponse(null, 'verification_success', false);
                                                 }}
                                                 onClose={() => {
                                                     // If closed without completing, maybe just log or do nothing?

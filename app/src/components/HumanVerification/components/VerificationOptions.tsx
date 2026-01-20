@@ -1,150 +1,324 @@
-import React from 'react';
-import * as Icons from 'lucide-react';
-import { CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+    Shield,
+    ShieldCheck,
+    Smartphone,
+    UserCheck,
+    Users,
+    Wallet,
+    Award,
+    Puzzle,
+    Fingerprint,
+    Key,
+    CheckCircle,
+    ChevronRight,
+    ChevronDown,
+} from 'lucide-react';
 import type { VerificationMethod, MethodCardVariant } from '../types';
+
+// Map string icon names to components
+const ICON_MAP: Record<string, React.ElementType> = {
+    'ShieldCheck': ShieldCheck,
+    'Shield': Shield,
+    'Smartphone': Smartphone,
+    'UserCheck': UserCheck,
+    'Users': Users,
+    'Wallet': Wallet,
+    'Award': Award,
+    'Puzzle': Puzzle,
+    'Fingerprint': Fingerprint,
+    'Key': Key,
+};
 
 interface VerificationOptionsProps {
     methods: VerificationMethod[];
     completedMethods: string[];
-    selectedMethodId?: string | null;
+    selectedMethod?: string;
     onSelect: (methodId: string) => void;
 }
 
-const OptionCard: React.FC<{
-    method: VerificationMethod;
-    variant: MethodCardVariant;
-    isComingSoon?: boolean;
-    onClick?: () => void;
-}> = ({ method, variant, isComingSoon, onClick }) => {
-    // Dynamic Icon Rendering
-    const IconComponent = (Icons[method.icon as keyof typeof Icons] || Icons.Shield) as React.ElementType;
+/**
+ * Get variant based on method state
+ */
+const getVariant = (
+    methodId: string,
+    completedMethods: string[],
+    selectedMethod?: string
+): MethodCardVariant => {
+    if (completedMethods.includes(methodId)) return 'completed';
+    if (selectedMethod === methodId) return 'selected';
+    return 'default';
+};
 
-    // Style Configurations
-    const getStyles = () => {
-        if (isComingSoon) {
-            return {
-                container: 'border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 cursor-not-allowed opacity-60',
-                iconColor: 'var(--color-text-dim)',
-                borderColor: 'rgba(255, 255, 255, 0.05)'
-            };
-        }
-        switch (variant) {
-            case 'completed':
-                return {
-                    container: 'border-green-500 bg-green-50 dark:bg-green-900/10 cursor-not-allowed',
-                    iconColor: '#30D158',
-                    borderColor: 'rgba(48, 209, 88, 0.5)'
-                };
-            case 'selected':
-                return {
-                    container: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 cursor-pointer ring-1 ring-blue-500',
-                    iconColor: '#3B82F6',
-                    borderColor: 'rgba(59, 130, 246, 0.5)'
-                };
-            default:
-                return {
-                    container: 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 cursor-pointer hover:border-blue-300 dark:hover:border-blue-500/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10',
-                    iconColor: 'var(--color-text-secondary)',
-                    borderColor: 'rgba(255, 255, 255, 0.1)'
-                };
-        }
+/**
+ * Variant styles - Mobile optimized
+ */
+const getVariantStyles = (variant: MethodCardVariant): React.CSSProperties => {
+    const baseStyles: React.CSSProperties = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px', // Slightly smaller gap for mobile
+        padding: '14px 16px', // More compact for mobile
+        border: 'none',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+        width: '100%',
+        textAlign: 'left',
+        position: 'relative',
     };
 
-    const styles = getStyles();
+    switch (variant) {
+        case 'default':
+            return {
+                ...baseStyles,
+                background: 'transparent',
+            };
 
-    return (
-        <div
-            onClick={!isComingSoon && variant !== 'completed' ? onClick : undefined}
-            className={`
-                relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-200
-                ${!isComingSoon && variant !== 'completed' ? 'hover:scale-[1.02] active:scale-[0.98] shadow-sm' : ''}
-                ${styles.container}
-            `}
-            style={{ borderColor: styles.borderColor }}
-        >
-            {/* Icon Box */}
-            <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: variant === 'default' && !isComingSoon ? 'rgba(255,255,255,0.05)' : styles.iconColor + '20',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-            }}>
-                {variant === 'completed' ? (
-                    <CheckCircle2 size={20} color={styles.iconColor} />
-                ) : (
-                    <IconComponent size={20} color={styles.iconColor} />
-                )}
-            </div>
+        case 'selected':
+            return {
+                ...baseStyles,
+                background: 'rgba(59, 130, 246, 0.1)',
+                borderLeft: '3px solid #3B82F6',
+                paddingLeft: '13px',
+            };
 
-            {/* Content */}
-            <div className="flex-1 min-w-0 flex flex-col">
-                <div className="flex justify-between items-start">
-                    <span style={{
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        color: variant === 'completed' ? styles.iconColor : 'var(--color-text-primary)'
-                    }} className="truncate">
-                        {method.name}
-                    </span>
-                    {isComingSoon && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 dark:bg-white/10 dark:text-gray-500 whitespace-nowrap ml-2">
-                            Soon
-                        </span>
-                    )}
-                </div>
+        case 'completed':
+            return {
+                ...baseStyles,
+                background: 'rgba(34, 197, 94, 0.1)',
+                borderLeft: '3px solid #22C55E',
+                paddingLeft: '13px',
+                cursor: 'not-allowed',
+            };
 
-                <div style={{
-                    fontSize: '12px',
-                    color: 'var(--color-text-secondary)',
-                    marginTop: '2px'
-                }}>
-                    +{Math.round(method.weight * 255)} points
-                </div>
-            </div>
+        default:
+            return baseStyles;
+    }
+};
 
-            {/* Selection Check for Selected state (optional visual cue) */}
-            {variant === 'selected' && (
-                <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-blue-500" />
-            )}
-        </div>
-    );
+const getIconBoxStyles = (variant: MethodCardVariant): React.CSSProperties => {
+    const baseStyles: React.CSSProperties = {
+        width: '44px', // Slightly smaller for mobile
+        height: '44px',
+        minWidth: '44px', // Prevent shrinking
+        minHeight: '44px',
+        borderRadius: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        transition: 'all 0.15s ease',
+    };
+
+    switch (variant) {
+        case 'default':
+            return {
+                ...baseStyles,
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+            };
+
+        case 'selected':
+            return {
+                ...baseStyles,
+                background: 'rgba(59, 130, 246, 0.15)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+            };
+
+        case 'completed':
+            return {
+                ...baseStyles,
+                background: 'rgba(34, 197, 94, 0.15)',
+                border: '1px solid rgba(34, 197, 94, 0.3)',
+            };
+
+        default:
+            return baseStyles;
+    }
+};
+
+const getIconColor = (variant: MethodCardVariant): string => {
+    switch (variant) {
+        case 'default':
+            return 'var(--color-text-secondary)';
+        case 'selected':
+            return '#3B82F6';
+        case 'completed':
+            return '#22C55E';
+        default:
+            return 'var(--color-text-secondary)';
+    }
+};
+
+const getPointsBadgeStyles = (variant: MethodCardVariant): React.CSSProperties => {
+    const baseStyles: React.CSSProperties = {
+        fontSize: '12px', // Bigger for mobile readability
+        fontWeight: 700,
+        padding: '4px 10px', // More padding for touch targets
+        borderRadius: '6px',
+        whiteSpace: 'nowrap',
+    };
+
+    switch (variant) {
+        case 'default':
+            return {
+                ...baseStyles,
+                color: 'var(--color-text-secondary)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+            };
+
+        case 'selected':
+            return {
+                ...baseStyles,
+                color: '#3B82F6',
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+            };
+
+        case 'completed':
+            return {
+                ...baseStyles,
+                color: '#22C55E',
+                background: 'rgba(34, 197, 94, 0.1)',
+                border: '1px solid rgba(34, 197, 94, 0.2)',
+            };
+
+        default:
+            return baseStyles;
+    }
 };
 
 export const VerificationOptions: React.FC<VerificationOptionsProps> = ({
     methods,
     completedMethods,
-    selectedMethodId,
-    onSelect
+    selectedMethod,
+    onSelect,
 }) => {
+    const [expanded, setExpanded] = useState(false);
+
+    // Show first 3 methods by default, rest on expand
+    const visibleMethods = expanded ? methods : methods.slice(0, 3);
+    const hiddenCount = methods.length - 3;
+
     return (
-        <div className="w-full max-w-md mx-auto">
-            <div className="grid grid-cols-1 gap-3">
-                {methods.map(method => {
-                    const isCompleted = completedMethods.includes(method.id);
-                    const isSelected = selectedMethodId === method.id;
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {visibleMethods.map((method) => {
+                const variant = getVariant(method.id, completedMethods, selectedMethod);
+                const isCompleted = variant === 'completed';
+                const isClickable = !isCompleted;
+                const IconComponent = ICON_MAP[method.icon] || Shield;
 
-                    // POC Logic: Only 'recaptcha-v3' is active
-                    const isComingSoon = method.id !== 'recaptcha-v3';
+                // Badge shows weight directly as decimal (e.g., +0.20, +0.25)
+                // Weight is separate from total Humanity Index calculation
+                const weightDisplay = method.weight.toFixed(2);
 
-                    let variant: MethodCardVariant = 'default';
-                    if (isCompleted) variant = 'completed';
-                    else if (isSelected) variant = 'selected';
+                return (
+                    <button
+                        key={method.id}
+                        onClick={() => isClickable && onSelect(method.id)}
+                        disabled={!isClickable}
+                        style={getVariantStyles(variant)}
+                        onMouseEnter={(e) => {
+                            if (isClickable && variant === 'default') {
+                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (variant === 'default') {
+                                e.currentTarget.style.background = 'transparent';
+                            }
+                        }}
+                    >
+                        {/* Icon box */}
+                        <div style={getIconBoxStyles(variant)}>
+                            {isCompleted ? (
+                                <CheckCircle size={20} color="#22C55E" />
+                            ) : (
+                                <IconComponent
+                                    size={20}
+                                    color={getIconColor(variant)}
+                                />
+                            )}
+                        </div>
 
-                    return (
-                        <OptionCard
-                            key={method.id}
-                            method={method}
-                            variant={variant}
-                            isComingSoon={isComingSoon}
-                            onClick={() => onSelect(method.id)}
-                        />
-                    );
-                })}
-            </div>
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: '8px',
+                            }}>
+                                <span style={{
+                                    fontSize: '14px', // Good size for mobile
+                                    fontWeight: 600,
+                                    color: variant === 'completed'
+                                        ? '#22C55E'
+                                        : variant === 'selected'
+                                            ? '#3B82F6'
+                                            : 'var(--color-text-primary)',
+                                    lineHeight: 1.3,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    flex: 1,
+                                }}>
+                                    {method.name}
+                                </span>
+
+                                {/* Points badge: shows weight directly */}
+                                <span style={getPointsBadgeStyles(variant)}>
+                                    {isCompleted ? '✓' : `+${weightDisplay}`}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Chevron */}
+                        {!isCompleted && (
+                            <ChevronRight
+                                size={18}
+                                color={variant === 'selected' ? '#3B82F6' : 'var(--color-text-dim)'}
+                                style={{ flexShrink: 0 }}
+                            />
+                        )}
+                    </button>
+                );
+            })}
+
+            {/* Show more button */}
+            {!expanded && hiddenCount > 0 && (
+                <button
+                    onClick={() => setExpanded(true)}
+                    style={{
+                        width: '100%',
+                        padding: '16px', // Bigger touch target for mobile
+                        background: 'transparent',
+                        border: 'none',
+                        fontSize: '13px', // Bigger for mobile
+                        fontWeight: 500,
+                        color: 'var(--color-text-secondary)', // Changed from dim to secondary (gray-400)
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.color = 'var(--color-text-primary)';
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--color-text-secondary)';
+                        e.currentTarget.style.background = 'transparent';
+                    }}
+                >
+                    Show {hiddenCount} more options
+                    <ChevronDown size={16} />
+                </button>
+            )}
         </div>
     );
 };

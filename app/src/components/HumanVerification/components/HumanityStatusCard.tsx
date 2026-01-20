@@ -1,138 +1,328 @@
-import React, { useEffect, useState } from 'react';
-import { Lock, ArrowRight, CheckCircle2, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle, Info, Lock, LayoutGrid } from 'lucide-react';
 import type { VerificationMethod, HumanityCardVariant } from '../types';
-import { verificationMethods as allVerificationMethods } from '../data/verificationMethods';
+import { ANIMATION_DURATION } from '../variants';
 
 interface HumanityStatusCardProps {
     humanityIndex: number;
-    completedMethods: string[]; // IDs
+    completedMethods: string[];
     availableMethods: VerificationMethod[];
-    variant: HumanityCardVariant; // Derived from props in parent usually, but user spec didn't list it in props, implied by logic? "locked/unlocked variant". I will keep it or derive it? User listed "locked" and "unlocked" variants. I will keep it as prop or derive. Parent in Task 8 says `locked` if 0 methods? 
-    // Actually user spec for Task 8 props:
-    // interface HumanityStatusCardProps { humanityIndex, completedMethods, availableMethods, onViewMatrix }
-    // It DOES NOT list 'variant'.
-    // BUT later says "locked variant: ...", "unlocked variant: ...".
-    // I will derive variant from `completedMethods.length > 0`. OR add text prop if desired.
-    // I'll stick to the strict props requested:
     onViewMatrix: () => void;
+    onAddMoreVerification?: () => void;
 }
 
 export const HumanityStatusCard: React.FC<HumanityStatusCardProps> = ({
     humanityIndex,
     completedMethods,
     availableMethods,
-    onViewMatrix
+    onViewMatrix,
+    onAddMoreVerification,
 }) => {
-    // Derive variant
-    const isUnlocked = completedMethods.length > 0;
-    const maxScore = 255;
-    const percentage = Math.min(100, Math.max(0, (humanityIndex / maxScore) * 100));
+    const [showOverlay, setShowOverlay] = useState(true);
+    const [isPulsing, setIsPulsing] = useState(false);
 
-    // Animation state
-    const [showPulse, setShowPulse] = useState(false);
+    const variant: HumanityCardVariant = completedMethods.length === 0 ? 'locked' : 'unlocked';
+    const percentage = Math.round((humanityIndex / 255) * 100);
 
+    // Handle unlock animation
     useEffect(() => {
-        if (isUnlocked) {
-            setShowPulse(true);
-            const timer = setTimeout(() => setShowPulse(false), 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [isUnlocked]);
+        if (variant === 'unlocked') {
+            // Fade out overlay
+            const fadeOutTimer = setTimeout(() => {
+                setShowOverlay(false);
+            }, ANIMATION_DURATION.FADE_OUT);
 
-    // Lookup completed method details
-    const completedDetails = allVerificationMethods.filter(m => completedMethods.includes(m.id));
+            // Start pulse animation
+            const pulseTimer = setTimeout(() => {
+                setIsPulsing(true);
+            }, ANIMATION_DURATION.FADE_OUT);
+
+            // Stop pulse animation after 2 seconds
+            const stopPulseTimer = setTimeout(() => {
+                setIsPulsing(false);
+            }, ANIMATION_DURATION.FADE_OUT + ANIMATION_DURATION.PULSE);
+
+            return () => {
+                clearTimeout(fadeOutTimer);
+                clearTimeout(pulseTimer);
+                clearTimeout(stopPulseTimer);
+            };
+        }
+    }, [variant]);
+
+    const completedMethodsList = availableMethods.filter(m =>
+        completedMethods.includes(m.id)
+    );
+    const remainingMethods = availableMethods.filter(m =>
+        !completedMethods.includes(m.id)
+    );
 
     return (
-        <div className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-6">
-            {/* Header: Score & Progress */}
-            <div className="mb-6">
-                <div className="flex justify-between items-baseline mb-2">
-                    <span className="text-xs font-medium text-gray-400 tracking-wider">
-                        HUMANITY INDEX
-                    </span>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold text-white">
-                            {Math.round(humanityIndex)}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                            /{maxScore}
-                        </span>
+        <div style={{
+            padding: '24px',
+            position: 'relative',
+        }}>
+            {/* Locked overlay */}
+            {variant === 'locked' && showOverlay && (
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '12px',
+                    zIndex: 10,
+                    transition: `opacity ${ANIMATION_DURATION.FADE_OUT}ms ease-out`,
+                }}>
+                    <div style={{
+                        textAlign: 'center',
+                        color: 'var(--color-text-secondary)',
+                    }}>
+                        <Lock size={32} style={{ marginBottom: '12px', opacity: 0.6 }} />
+                        <p style={{ fontSize: '14px' }}>完成驗證以解鎖</p>
                     </div>
                 </div>
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-violet-500 rounded-full transition-all duration-1000 ease-out"
-                        style={{ width: `${percentage}%` }}
-                    />
+            )}
+
+            {/* Score display */}
+            <div style={{
+                textAlign: 'center',
+                marginBottom: '24px',
+            }}>
+                <div style={{
+                    fontSize: '48px',
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary)',
+                    lineHeight: 1,
+                }}>
+                    {humanityIndex}
+                    <span style={{
+                        fontSize: '20px',
+                        fontWeight: 400,
+                        color: 'var(--color-text-dim)',
+                    }}>/255</span>
                 </div>
+                <p style={{
+                    fontSize: '14px',
+                    color: 'var(--color-text-secondary)',
+                    marginTop: '8px',
+                }}>
+                    Humanity Index
+                </p>
+
+                {/* Progress bar */}
+                <div style={{
+                    marginTop: '16px',
+                    width: '100%',
+                    height: '8px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                }}>
+                    <div style={{
+                        width: `${percentage}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #8B5CF6, #A855F7)',
+                        borderRadius: '4px',
+                        transition: 'width 0.5s ease-out',
+                    }} />
+                </div>
+                <p style={{
+                    fontSize: '12px',
+                    color: 'var(--color-text-dim)',
+                    marginTop: '8px',
+                }}>
+                    {percentage}% 完成
+                </p>
             </div>
 
-            {/* Lists Container */}
-            <div className="flex flex-col gap-3 mb-8">
-                {/* Completed Methods (Green) */}
-                {completedDetails.map(method => (
-                    <div key={method.id} className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 size={16} className="text-green-500" />
-                            <span className="text-sm font-medium text-white/90">
-                                {method.name}
-                            </span>
-                        </div>
-                        <span className="text-xs font-bold text-green-500">
-                            +{Math.round(method.weight * 255)}
-                        </span>
+            {/* Completed verifications */}
+            {completedMethodsList.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                    <h4 style={{
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: 'var(--color-text-dim)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        marginBottom: '12px',
+                    }}>
+                        已完成驗證
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {completedMethodsList.map(method => (
+                            <div
+                                key={method.id}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '12px 16px',
+                                    background: 'rgba(34, 197, 94, 0.1)',
+                                    border: '1px solid rgba(34, 197, 94, 0.2)',
+                                    borderRadius: '10px',
+                                }}
+                            >
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                }}>
+                                    <CheckCircle size={16} color="#22c55e" />
+                                    <span style={{
+                                        fontSize: '14px',
+                                        color: '#22c55e',
+                                        fontWeight: 500,
+                                    }}>
+                                        {method.name}
+                                    </span>
+                                </div>
+                                <span style={{
+                                    fontSize: '13px',
+                                    color: '#22c55e',
+                                    fontWeight: 600,
+                                }}>
+                                    +{Math.round(method.weight * 255)}
+                                </span>
+                            </div>
+                        ))}
                     </div>
-                ))}
+                </div>
+            )}
 
-                {/* Available Methods (Gray) */}
-                {availableMethods.map(method => (
-                    <div key={method.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 opacity-60">
-                        <div className="flex items-center gap-2">
-                            <Info size={16} className="text-gray-400" />
-                            <span className="text-sm text-gray-400">
+            {/* Remaining verifications */}
+            {remainingMethods.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                    <h4 style={{
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: 'var(--color-text-dim)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        marginBottom: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                    }}>
+                        <Info size={12} />
+                        可用驗證方式
+                    </h4>
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                    }}>
+                        {remainingMethods.slice(0, 4).map(method => (
+                            <span
+                                key={method.id}
+                                style={{
+                                    padding: '6px 12px',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '20px',
+                                    fontSize: '12px',
+                                    color: 'var(--color-text-secondary)',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    maxWidth: '140px',
+                                }}
+                                title={method.name} // 添加 tooltip 顯示完整名稱
+                            >
                                 {method.name}
                             </span>
-                        </div>
+                        ))}
+                        {remainingMethods.length > 4 && (
+                            <span style={{
+                                padding: '6px 12px',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                borderRadius: '20px',
+                                fontSize: '12px',
+                                color: 'var(--color-text-dim)',
+                            }}>
+                                +{remainingMethods.length - 4} more
+                            </span>
+                        )}
                     </div>
-                ))}
+                </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+                {onAddMoreVerification && (
+                    <button
+                        onClick={onAddMoreVerification}
+                        className="btn-ghost"
+                        style={{
+                            flex: 1,
+                            padding: '10px 16px',
+                            borderRadius: '12px',
+                            background: 'transparent',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            color: 'var(--color-text-secondary)',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        Add Verification
+                    </button>
+                )}
+                <button
+                    onClick={onViewMatrix}
+                    disabled={variant === 'locked'}
+                    className={variant === 'unlocked' ? 'btn-primary' : ''}
+                    style={{
+                        flex: 2,
+                        padding: '10px 16px',
+                        borderRadius: '12px',
+                        background: variant === 'unlocked'
+                            ? '#ffffff'
+                            : 'rgba(255, 255, 255, 0.1)',
+                        border: variant === 'unlocked'
+                            ? '1px solid transparent'
+                            : '1px solid rgba(255, 255, 255, 0.1)',
+                        color: variant === 'unlocked' ? '#000000' : 'var(--color-text-dim)',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        cursor: variant === 'unlocked' ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s ease',
+                        animation: isPulsing ? 'pulse 1s ease-in-out infinite' : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                        if (variant === 'unlocked') {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = '#ffffff';
+                            e.currentTarget.style.border = '1px solid #ffffff';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (variant === 'unlocked') {
+                            e.currentTarget.style.background = '#ffffff';
+                            e.currentTarget.style.color = '#000000';
+                            e.currentTarget.style.border = '1px solid transparent';
+                        }
+                    }}
+                >
+                    <LayoutGrid size={16} />
+                    View My Matrix
+                </button>
             </div>
 
-            {/* Unlock Button */}
-            <button
-                disabled={!isUnlocked}
-                onClick={onViewMatrix}
-                className={`
-                    w-full py-4 rounded-xl flex items-center justify-center gap-2 font-semibold text-base transition-all duration-300 relative overflow-hidden group
-                    ${isUnlocked
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg cursor-pointer hover:shadow-blue-500/25'
-                        : 'bg-white/5 text-white/30 cursor-not-allowed'
-                    }
-                    ${showPulse ? 'animate-pulse' : ''}
-                `}
-            >
-                <div className="relative z-10 flex items-center gap-2">
-                    {isUnlocked ? (
-                        <>
-                            <span>View My Twin Matrix</span>
-                            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                        </>
-                    ) : (
-                        <>
-                            <Lock size={18} />
-                            <span>Complete verification to unlock</span>
-                        </>
-                    )}
-                </div>
-
-                {/* Mask / Lock Overlay (Visual logic per spec) */}
-                <div
-                    className={`
-                        absolute inset-0 bg-black/40 backdrop-blur-[2px]
-                        transition-opacity duration-300
-                        ${isUnlocked ? 'opacity-0 pointer-events-none' : 'opacity-100'}
-                    `}
-                />
-            </button>
+            {/* Pulse animation keyframes */}
+            <style>{`
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+                    50% { transform: scale(1.02); box-shadow: 0 0 20px 4px rgba(139, 92, 246, 0.3); }
+                }
+            `}</style>
         </div>
     );
 };
