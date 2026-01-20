@@ -10,33 +10,33 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         id: 'welcome',
         triggers: ['start', 'hi', 'hello', 'menu'],
         response: {
-            text: "Welcome to the twin3 community!\n\ntwin3 transforms your social influence into a verifiable digital identity.\nAI analyzes your content style and engagement to unlock exclusive brand collaborations.\n\nClick the suggestions below or ask me anything about twin3!",
+            text: "Own Your Humanity with twin3\n\nTransform your human warmth into a 256D Twin Matrix. Let your Personal Agent work and earn for you while you focus on living.\n\nClick the suggestions below or ask me anything about twin3!",
             delay: 800,
             card: {
                 type: 'feature_grid',
                 features: [
                     {
-                        icon: 'target',
-                        title: 'Discover Your Value',
-                        description: 'AI analyzes your unique influence and generates your Twin Matrix Score (0-255)'
+                        icon: 'verification',
+                        title: 'Universal Human Passport',
+                        description: 'Verify once and gain seamless access to any platform requiring human proof. No more repetitive captchas—just your digital key to a bot-free internet.'
                     },
                     {
-                        icon: 'handshake',
-                        title: 'Match Brand Tasks',
-                        description: 'Higher scores unlock premium brand collaborations with better rewards'
+                        icon: 'matrix',
+                        title: 'Your 256D Digital Twin',
+                        description: 'Construct your evolving identity by lighting up the 16x16 Twin Matrix. Across physical, mental, social, and digital dimensions—ensure you stay you in the digital world.'
                     },
                     {
-                        icon: 'stars',
-                        title: 'Build Digital Assets',
-                        description: 'Transform your influence into portable proof of authenticity for the AI era'
+                        icon: 'agent',
+                        title: '24/7 Personal Agent',
+                        description: 'Empower an agent that carries your preferences to work, earn, and filter noise. Your twin manages the digital clutter while you reclaim your time to live.'
                     }
                 ]
             }
         },
         suggestedActions: [
-            { label: 'Get Started', payload: 'verify_human' },
-            { label: 'How It Works', payload: 'how_it_works' },
-            { label: 'View Sample Tasks', payload: 'browse_tasks' }
+            { label: 'Mint Free SBT', payload: 'verify_human' },
+            { label: 'What is SBT?', payload: 'sbt_info' },
+            { label: 'Why Verify Humanity?', payload: 'why_verify' }
         ]
     },
 
@@ -51,14 +51,15 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
             delay: 600
         },
         suggestedActions: [
-            { label: 'Get Started', payload: 'verify_human' },
-            { label: 'View Sample Tasks', payload: 'browse_tasks' }
+            { label: 'Mint Free SBT', payload: 'verify_human' },
+            { label: 'What is SBT?', payload: 'sbt_info' }
         ]
     },
 
     // ============================================================
     // 1.5 TWIN MATRIX - 256D VISUALIZATION
     // ============================================================
+
     {
         id: 'twin_matrix',
         triggers: ['matrix', 'twin matrix', '256d', 'profile'],
@@ -68,9 +69,8 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
             widget: 'twin_matrix'
         },
         suggestedActions: [
-            { label: 'Mint SBT', payload: 'mint_sbt' },
-            { label: 'Verify Account', payload: 'verify_human' },
-            { label: 'Browse Tasks', payload: 'browse_tasks' }
+            { label: 'Mint Free SBT', payload: 'verify_human' },
+            { label: 'What is SBT?', payload: 'sbt_info' }
         ]
     },
 
@@ -81,11 +81,14 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         id: 'verify_human',
         triggers: ['verify', 'verification', 'prove', 'human'],
         response: {
-            text: "**Connect Your Instagram**\nVerify your account to unlock personalized tasks and discover your influence value.",
+            text: "**Verify Humanity**\nSelect a verification method to prove you are human and unlock the Twin Matrix. The Humanity Index measures the likelihood that you are a real person and is the fundamental building block of trust in the decentralised community.",
             delay: 500,
-            widget: 'instagram_connect'
+            widget: 'human_verification'
         },
-        suggestedActions: []
+        suggestedActions: [
+            { label: 'What is SBT?', payload: 'sbt_info' },
+            { label: 'Why Verify Humanity?', payload: 'why_verify' }
+        ]
     },
 
     // ============================================================
@@ -95,11 +98,14 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         id: 'verification_required',
         triggers: [],
         response: {
-            text: "**Connect Your Instagram**\nVerify your account to unlock personalized tasks and discover your influence value.",
+            text: "**Verification Required**\nPlease complete a humanity check to proceed with this task.",
             delay: 600,
-            widget: 'instagram_connect'
+            widget: 'human_verification'
         },
-        suggestedActions: []
+        suggestedActions: [
+            { label: 'What is SBT?', payload: 'sbt_info' },
+            { label: 'Mint Free SBT', payload: 'verify_human' }
+        ]
     },
 
     // ============================================================
@@ -109,13 +115,13 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         id: 'verification_success',
         triggers: ['verified', 'success'],
         response: {
-            text: "✅ **Verification Complete!**\n\nYour Instagram is now linked. Let's see your Twin Matrix Score!",
+            text: "Verification Recorded.\n\nYour humanity score has been updated. You can continue adding verification methods to boost your score.",
             delay: 500,
             widget: 'twin_matrix'
         },
         suggestedActions: [
-            { label: 'Browse Tasks', payload: 'browse_tasks' },
-            { label: 'View Dashboard', payload: 'dashboard' }
+            { label: 'View My Matrix', payload: 'twin_matrix' },
+            { label: 'What is SBT?', payload: 'sbt_info' }
         ]
     },
 
@@ -153,8 +159,8 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         },
         suggestedActions: [
             { label: 'View Twin Matrix', payload: 'twin_matrix' },
-            { label: 'Complete Verification', payload: 'verify_human' },
-            { label: 'Browse Tasks', payload: 'browse_tasks' }
+            { label: 'Mint Free SBT', payload: 'verify_human' },
+            { label: 'What is SBT?', payload: 'sbt_info' }
         ]
     },
 
@@ -190,8 +196,8 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         },
         suggestedActions: [
             { label: 'View Twin Matrix', payload: 'twin_matrix' },
-            { label: 'Complete Verification', payload: 'verify_human' },
-            { label: 'Browse Tasks', payload: 'browse_tasks' }
+            { label: 'Mint Free SBT', payload: 'verify_human' },
+            { label: 'What is SBT?', payload: 'sbt_info' }
         ]
     },
 
@@ -253,8 +259,73 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
             delay: 300
         },
         suggestedActions: [
-            { label: 'View Tasks', payload: 'browse_tasks' },
-            { label: 'Dashboard', payload: 'dashboard' }
+            { label: 'Mint Free SBT', payload: 'verify_human' },
+            { label: 'What is the Roadmap?', payload: 'roadmap_info' },
+            { label: 'Token Allocation?', payload: 'tokenomics_info' }
+        ]
+    },
+
+    // ============================================================
+    // 7. ROADMAP INFO
+    // ============================================================
+    {
+        id: 'roadmap_info',
+        triggers: ['roadmap', 'milestone', 'timeline', 'future', 'plans'],
+        response: {
+            text: "**Twin3 Roadmap (2026-2027)**\n\n• **Q1 2026 (Foundation)**: V2.0 Core Build, Web2 Bridge\n• **Q2 2026 (Ignition)**: Public Beta, Human Agent MVP, Airdrop #1\n• **Q3 2026 (PMF)**: Agentic Marketplace Beta, Airdrop #2\n• **Q4 2026 (Hypergrowth)**: Public API, DAO Governance\n\nCurrent Phase: **Foundation** (User Target: 10,000)",
+            delay: 500
+        },
+        suggestedActions: [
+            { label: 'What is SBT?', payload: 'sbt_info' },
+            { label: 'Mint Free SBT', payload: 'verify_human' }
+        ]
+    },
+
+    // ============================================================
+    // 8. TOKENOMICS INFO
+    // ============================================================
+    {
+        id: 'tokenomics_info',
+        triggers: ['token', 'allocation', 'economics', 'supply', 'airdrop'],
+        response: {
+            text: "**Token Allocation ($TWIN)**\n\n• **Community Incentive**: 30% (300M) - Task rewards & growth\n• **Core Team**: 25% (250M) - Long-term commitment\n• **Ecosystem Growth**: 15% (150M) - Partnerships & integrations\n• **Liquidity**: 8% (80M) - Market stability\n• **Airdrop**: 6% (60M) - Early supporters (Q2 & Q3 2026)\n\n**Total Supply**: 1,000,000,000",
+            delay: 500
+        },
+        suggestedActions: [
+            { label: 'What is SBT?', payload: 'sbt_info' },
+            { label: 'Mint Free SBT', payload: 'verify_human' }
+        ]
+    },
+
+    // ============================================================
+    // 9. SBT INFO
+    // ============================================================
+    {
+        id: 'sbt_info',
+        triggers: ['sbt', 'soulbound', 'token', 'what is sbt'],
+        response: {
+            text: "**What is an SBT?**\n\n**Soulbound Token (SBT)** is a permanent, non-transferable digital identity token on the blockchain.\n\nUnlike normal NFTs, it cannot be bought, sold, or transferred. It serves as your on-chain reputation proof, certifying that 'You are a unique human' without revealing sensitive personal data.",
+            delay: 500
+        },
+        suggestedActions: [
+            { label: 'Why Verify Humanity?', payload: 'why_verify' },
+            { label: 'Mint Free SBT', payload: 'verify_human' }
+        ]
+    },
+
+    // ============================================================
+    // 10. WHY VERIFY
+    // ============================================================
+    {
+        id: 'why_verify',
+        triggers: ['why', 'benefit', 'reason', 'why verify'],
+        response: {
+            text: "**Why Verify Humanity?**\n\nVerification protects the twin3 ecosystem from bots and ensures fair rewards for real humans.\n\n**Benefits:**\n• **Unlock Earning**: Access premium tasks.\n• **Boost Trust**: Higher trust score = more opportunities.\n• **Governance**: Future voting rights in the DAO.",
+            delay: 500
+        },
+        suggestedActions: [
+            { label: 'What is SBT?', payload: 'sbt_info' },
+            { label: 'Mint Free SBT', payload: 'verify_human' }
         ]
     }
 ];

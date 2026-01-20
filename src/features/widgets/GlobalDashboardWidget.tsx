@@ -49,7 +49,7 @@ export const GlobalDashboardWidget: React.FC<GlobalDashboardWidgetProps> = ({
             brand: "twin3 protocol",
             reward: 100,
             progress: { current: 1, total: 3 },
-            imageUrl: "/brands/twin3-black-circle.png", // New uploaded logo
+            imageUrl: "/brands/twin3-black-half.png", // New uploaded logo
             iconColor: "#3B82F6", // Blue
             status: 'active'
         },
@@ -103,7 +103,7 @@ export const GlobalDashboardWidget: React.FC<GlobalDashboardWidgetProps> = ({
             display: 'flex',
             flexDirection: 'column',
             width: '100%',
-            maxWidth: '420px', // Restrict max width nicely
+            maxWidth: '420px',
             margin: '0 auto'  // Center if in larger container
         }}>
             {/* 1. Stats Pulse Row */}
@@ -285,7 +285,7 @@ export const GlobalDashboardWidget: React.FC<GlobalDashboardWidgetProps> = ({
                                                 fontSize: '12px',
                                                 borderRadius: '8px',
                                                 whiteSpace: 'nowrap',
-                                                zIndex: 50,
+                                                zIndex: 99999, // 設定為最高層級
                                                 pointerEvents: 'none',
                                                 border: '1px solid rgba(255, 255, 255, 0.1)',
                                                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
@@ -343,7 +343,7 @@ export const GlobalDashboardWidget: React.FC<GlobalDashboardWidgetProps> = ({
                                                     fontSize: '12px',
                                                     borderRadius: '8px',
                                                     whiteSpace: 'nowrap',
-                                                    zIndex: 50,
+                                                    zIndex: 99999, // 設定為最高層級
                                                     pointerEvents: 'none',
                                                     border: '1px solid rgba(255, 255, 255, 0.1)',
                                                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'

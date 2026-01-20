@@ -1,13 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
-import { Menu, Settings, Send, Sparkles, LayoutDashboard, FileText, CheckSquare, X, Coins, Clock, Users, Terminal, Plus, Target, Handshake } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { Settings, Send, Sparkles, LayoutDashboard, CheckSquare, X, Coins, Clock, Users, Terminal, Plus, Target, Handshake, HelpCircle, Grid, PanelLeftOpen, PanelLeftClose, LayoutList, Shield, FileText, TicketsPlane, History as HistoryIcon } from 'lucide-react';
+import { Tooltip } from '../../components/Tooltip';
+import { Logo } from '../../components/Logo';
 import type { Message } from '../../types';
 import type { Suggestion } from '../../types/a2ui';
 import type { TaskOpportunityPayload } from '../../types';
 import { MessageBubble } from './MessageBubble';
 import { TaskDetailModal } from '../cards/TaskDetailModal';
+import { TwinMatrixCard } from '../cards/TwinMatrixCard';
+import { web3EngineerMatrixData } from '../cards/twin-matrix/mockData';
 import { INTERACTION_INVENTORY } from '../../data/inventory';
 import { generateAgentResponse, isAIEnabled, generateSuggestions } from '../../services/geminiService';
-import { TwinMatrixWidget, DevConsole, devLog, InstagramConnectWidget, ScoreProgressWidget, ActiveTaskWidget, GlobalDashboardWidget } from '../widgets';
+import { DevConsole, devLog, InstagramConnectWidget, ActiveTaskWidget, GlobalDashboardWidget, HumanVerification } from '../widgets';
 
 export const ChatLayout: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -15,19 +19,21 @@ export const ChatLayout: React.FC = () => {
     const [isTyping, setIsTyping] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [rightSidebarOpen, setRightSidebarOpen] = useState(true); // Default open on PC
     const [selectedTask, setSelectedTask] = useState<TaskOpportunityPayload | null>(null);
     const [showDevConsole, setShowDevConsole] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
+    const [activeTab, setActiveTab] = useState<'chat' | 'dashboard' | 'matrix' | 'tasks' | 'history'>('chat');
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const hasStarted = useRef(false);
 
-    // Quick Actions
+    // Quick Actions (Right Sidebar)
     const quickActions = [
-        { icon: FileText, label: 'Browse All Tasks', action: 'browse_tasks' },
-        { icon: LayoutDashboard, label: 'My Dashboard', action: 'dashboard' },
-        { icon: CheckSquare, label: 'Tasks In Progress', action: 'dashboard' },
+        { icon: Shield, label: 'Verify Humanity', action: 'verify_human' },
+        { icon: FileText, label: 'White Paper', action: 'white_paper' },
+        { icon: HelpCircle, label: 'How It Works', action: 'how_it_works' },
     ];
 
     useEffect(() => {
@@ -218,6 +224,14 @@ export const ChatLayout: React.FC = () => {
         triggerResponse(null, 'accept_task', false);
     };
 
+    const handleNewChat = () => {
+        setMessages([]);
+        setSuggestions([]);
+        setActiveTab('chat');
+        triggerResponse(null, 'welcome', false);
+        if (window.innerWidth < 1024) setSidebarOpen(false);
+    };
+
     useEffect(() => {
         if (!hasStarted.current) {
             hasStarted.current = true;
@@ -294,150 +308,427 @@ export const ChatLayout: React.FC = () => {
             <aside
                 className="glass"
                 style={{
-                    width: sidebarOpen ? '280px' : '0',
+                    width: window.innerWidth >= 1024
+                        ? (sidebarOpen ? '280px' : '72px') // Desktop: 280px or 72px (Mini)
+                        : (sidebarOpen ? '280px' : '0'),   // Mobile: 280px or 0 (Hidden)
                     flexShrink: 0,
                     display: 'flex',
                     flexDirection: 'column',
                     transition: 'all 0.3s ease',
-                    overflow: sidebarOpen ? 'visible' : 'hidden',
-                    borderRight: sidebarOpen ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                    overflow: sidebarOpen ? 'visible' : 'hidden', // Allow overflow for tooltips if needed, or hidden if causing scroll
+                    borderRight: '1px solid rgba(255, 255, 255, 0.08)', // Always show border on desktop
                     position: window.innerWidth < 1024 ? 'fixed' : 'relative',
                     left: 0,
                     top: 0,
                     height: '100vh',
                     zIndex: 999,
                     transform: window.innerWidth < 1024 && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)',
+                    // Ensure hidden text doesn't cause layout shifting during transition
+                    whiteSpace: 'nowrap',
                 }}
             >
-                {sidebarOpen && (
+                {/* Always render content on Desktop (Collapsed or Open), only hide on Mobile if closed */}
+                {(window.innerWidth >= 1024 || sidebarOpen) && (
                     <>
-                        {/* Header with close button on mobile/tablet */}
+                        {/* Header */}
                         <div style={{
-                            padding: '20px',
+                            padding: '16px',
                             borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between'
+                            justifyContent: window.innerWidth >= 1024 && !sidebarOpen ? 'center' : 'space-between', // Center if collapsed
+                            height: '64px'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <img
-                                    src="/twin3_logo.svg"
-                                    alt="twin3"
-                                    style={{
-                                        width: '28px',
-                                        height: '28px',
-                                        borderRadius: 'var(--radius-md)'
-                                    }}
-                                />
-                                <h1 className="text-gradient" style={{ fontSize: '18px', fontWeight: 500 }}>twin3.ai</h1>
-                            </div>
+                            {/* Mobile Header Logo - now handled in main header, removed from here for mobile */}
+                            {window.innerWidth >= 1024 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+                                    <Logo
+                                        width={28}
+                                        height={28}
+                                        variant="dark"
+                                    />
+                                    {/* Hide text if collapsed */}
+                                    {sidebarOpen && (
+                                        <h1 className="text-gradient animate-fade-in" style={{ fontSize: '18px', fontWeight: 500 }}>
+                                            twin3.ai
+                                        </h1>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Close button (mobile/tablet only) */}
                             {window.innerWidth < 1024 && (
-                                <button
-                                    onClick={() => setSidebarOpen(false)}
-                                    className="btn-ghost"
-                                    style={{
-                                        padding: '8px',
-                                        minWidth: '32px',
-                                        borderRadius: 'var(--radius-md)'
-                                    }}
-                                >
-                                    <X size={20} />
-                                </button>
+                                <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => setSidebarOpen(false)}
+                                        className="btn-ghost"
+                                        style={{
+                                            padding: '8px',
+                                            minWidth: '32px',
+                                            borderRadius: 'var(--radius-md)'
+                                        }}
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
                             )}
                         </div>
 
                         <nav style={{
                             flex: 1,
-                            padding: '16px 12px',
+                            padding: window.innerWidth >= 1024 && !sidebarOpen ? '16px 8px' : '16px 12px', // Reduce padding if collapsed
                             overflow: 'auto',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '16px'
+                            gap: '4px',
+                            alignItems: window.innerWidth >= 1024 && !sidebarOpen ? 'center' : 'stretch' // Center items if collapsed
                         }} className="scrollbar-hide">
-                            {/* Score Progress Widget */}
-                            <ScoreProgressWidget
-                                currentScore={isVerified ? 20 : 0}
-                                maxScore={100}
-                                onTaskClick={(taskId) => {
-                                    if (taskId === 'proof_of_humanity') return;
-                                    triggerResponse(null, 'browse_tasks', false);
-                                }}
-                            />
+                            {/* Navigation Tabs */}
 
-                            {/* Gas Free Minting Card */}
-                            {/* Gas Free Minting Card */}
-                            <div className="card" style={{
-                                padding: '24px',
-                                background: 'var(--glass-bg)',
-                                border: '1px solid var(--glass-border)',
-                                textAlign: 'center',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '20px'
-                            }}>
-                                <div>
-                                    <div style={{
-                                        fontSize: '18px',
-                                        fontWeight: 500,
-                                        color: 'var(--color-text-primary)',
-                                        marginBottom: '6px'
-                                    }}>
-                                        Gas free minting
-                                    </div>
-                                    <div style={{
-                                        fontSize: '14px',
-                                        color: 'var(--color-text-secondary)',
-                                        lineHeight: '1.4'
-                                    }}>
-                                        for early users<br />
-                                        <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>limited time only!</span>
-                                    </div>
-                                </div>
-
-                                <div style={{
-                                    fontSize: '56px',
-                                    fontWeight: 500,
-                                    color: 'var(--color-text-primary)',
-                                    letterSpacing: '-3px',
-                                    lineHeight: 1
-                                }}>
-                                    2750
-                                </div>
-
-                                <button className="btn btn-primary" style={{
-                                    width: '100%',
-                                    padding: '14px',
-                                    fontSize: '15px',
-                                    fontWeight: 500
-                                }}>
-                                    Free Mint
+                            {/* New Chat */}
+                            {window.innerWidth >= 1024 && !sidebarOpen ? (
+                                <Tooltip content="New Chat" placement="right">
+                                    <button
+                                        onClick={handleNewChat}
+                                        className="btn-ghost"
+                                        style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '0',
+                                            background: activeTab === 'chat' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                            color: activeTab === 'chat' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                            border: activeTab === 'chat' ? 'none' : '1px solid var(--glass-border)',
+                                            borderRadius: 'var(--radius-md)',
+                                            cursor: 'pointer',
+                                            justifyContent: 'center',
+                                            marginBottom: '8px'
+                                        }}
+                                    >
+                                        <Plus size={20} />
+                                    </button>
+                                </Tooltip>
+                            ) : (
+                                <button
+                                    onClick={handleNewChat}
+                                    className="btn-ghost"
+                                    style={{
+                                        width: '100%',
+                                        height: 'auto',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '12px',
+                                        background: activeTab === 'chat' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                        color: activeTab === 'chat' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                        border: activeTab === 'chat' ? 'none' : '1px solid var(--glass-border)',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer',
+                                        justifyContent: 'flex-start',
+                                        marginBottom: '8px'
+                                    }}
+                                >
+                                    <Plus size={20} />
+                                    <span style={{ fontWeight: 500 }}>New Chat</span>
                                 </button>
-                            </div>
+                            )}
+
+                            {/* Twin Matrix */}
+                            {window.innerWidth >= 1024 && !sidebarOpen ? (
+                                <Tooltip content="Twin Matrix" placement="right">
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab('matrix');
+                                            triggerResponse(null, 'twin_matrix', false);
+                                            if (window.innerWidth < 1024) setSidebarOpen(false);
+                                        }}
+                                        className="btn-ghost"
+                                        style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '0',
+                                            background: activeTab === 'matrix' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                            color: activeTab === 'matrix' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                            border: 'none',
+                                            borderRadius: 'var(--radius-md)',
+                                            cursor: 'pointer',
+                                            justifyContent: 'center'
+                                        }}
+                                    >
+                                        <Grid size={20} />
+                                    </button>
+                                </Tooltip>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('matrix');
+                                        triggerResponse(null, 'twin_matrix', false);
+                                        if (window.innerWidth < 1024) setSidebarOpen(false);
+                                    }}
+                                    className="btn-ghost"
+                                    style={{
+                                        width: '100%',
+                                        height: 'auto',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '12px',
+                                        background: activeTab === 'matrix' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                        color: activeTab === 'matrix' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                        border: 'none',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer',
+                                        justifyContent: 'flex-start'
+                                    }}
+                                >
+                                    <Grid size={20} />
+                                    <span style={{ fontWeight: 500 }}>Twin Matrix</span>
+                                </button>
+                            )}
+
+                            {/* Tasks */}
+                            {window.innerWidth >= 1024 && !sidebarOpen ? (
+                                <Tooltip content="Tasks" placement="right">
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab('tasks');
+                                            triggerResponse(null, 'browse_tasks', false);
+                                            if (window.innerWidth < 1024) setSidebarOpen(false);
+                                        }}
+                                        className="btn-ghost"
+                                        style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '0',
+                                            background: activeTab === 'tasks' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                            color: activeTab === 'tasks' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                            border: 'none',
+                                            borderRadius: 'var(--radius-md)',
+                                            cursor: 'pointer',
+                                            justifyContent: 'center'
+                                        }}
+                                    >
+                                        <CheckSquare size={20} />
+                                    </button>
+                                </Tooltip>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('tasks');
+                                        triggerResponse(null, 'browse_tasks', false);
+                                        if (window.innerWidth < 1024) setSidebarOpen(false);
+                                    }}
+                                    className="btn-ghost"
+                                    style={{
+                                        width: '100%',
+                                        height: 'auto',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '12px',
+                                        background: activeTab === 'tasks' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                        color: activeTab === 'tasks' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                        border: 'none',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer',
+                                        justifyContent: 'flex-start'
+                                    }}
+                                >
+                                    <CheckSquare size={20} />
+                                    <span style={{ fontWeight: 500 }}>Tasks</span>
+                                </button>
+                            )}
+
+                            {/* Dashboard */}
+                            {window.innerWidth >= 1024 && !sidebarOpen ? (
+                                <Tooltip content="Dashboard" placement="right">
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab('dashboard');
+                                            if (window.innerWidth < 1024) setSidebarOpen(false);
+                                        }}
+                                        className="btn-ghost"
+                                        style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '0',
+                                            background: activeTab === 'dashboard' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                            color: activeTab === 'dashboard' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                            border: 'none',
+                                            borderRadius: 'var(--radius-md)',
+                                            cursor: 'pointer',
+                                            justifyContent: 'center'
+                                        }}
+                                    >
+                                        <LayoutDashboard size={20} />
+                                    </button>
+                                </Tooltip>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('dashboard');
+                                        if (window.innerWidth < 1024) setSidebarOpen(false);
+                                    }}
+                                    className="btn-ghost"
+                                    style={{
+                                        width: '100%',
+                                        height: 'auto',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '12px',
+                                        background: activeTab === 'dashboard' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                        color: activeTab === 'dashboard' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                        border: 'none',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer',
+                                        justifyContent: 'flex-start'
+                                    }}
+                                >
+                                    <LayoutDashboard size={20} />
+                                    <span style={{ fontWeight: 500 }}>Dashboard</span>
+                                </button>
+                            )}
+
+                            {/* History */}
+                            {window.innerWidth >= 1024 && !sidebarOpen ? (
+                                <Tooltip content="History" placement="right">
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab('history');
+                                            // Handle history view logic if needed
+                                            if (window.innerWidth < 1024) setSidebarOpen(false);
+                                        }}
+                                        className="btn-ghost"
+                                        style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '0',
+                                            background: activeTab === 'history' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                            color: activeTab === 'history' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                            border: 'none',
+                                            borderRadius: 'var(--radius-md)',
+                                            cursor: 'pointer',
+                                            justifyContent: 'center'
+                                        }}
+                                    >
+                                        <HistoryIcon size={20} />
+                                    </button>
+                                </Tooltip>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('history');
+                                        // Handle history view logic if needed
+                                        if (window.innerWidth < 1024) setSidebarOpen(false);
+                                    }}
+                                    className="btn-ghost"
+                                    style={{
+                                        width: '100%',
+                                        height: 'auto',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '12px',
+                                        background: activeTab === 'history' ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                                        color: activeTab === 'history' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                        border: 'none',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer',
+                                        justifyContent: 'flex-start'
+                                    }}
+                                >
+                                    <HistoryIcon size={20} />
+                                    <span style={{ fontWeight: 500 }}>History</span>
+                                </button>
+                            )}
+
+                            {/* Mobile Divider & Quick Actions */}
+                            {window.innerWidth < 1024 && (
+                                <>
+                                    <div style={{
+                                        height: '1px',
+                                        background: 'rgba(255, 255, 255, 0.06)',
+                                        margin: '12px 0'
+                                    }} />
+
+                                    <div style={{ padding: '0 12px', fontSize: '13px', fontWeight: 500, color: 'var(--color-text-dim)', marginBottom: '8px' }}>
+                                        Quick Actions
+                                    </div>
+
+                                    {quickActions.map((qa, i) => {
+                                        const Icon = qa.icon;
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => {
+                                                    triggerResponse(null, qa.action, false);
+                                                    setSidebarOpen(false);
+                                                }}
+                                                className="btn-ghost"
+                                                style={{
+                                                    width: '100%',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px',
+                                                    padding: '12px',
+                                                    background: 'transparent',
+                                                    color: 'var(--color-text-secondary)',
+                                                    border: 'none',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    cursor: 'pointer',
+                                                    justifyContent: 'flex-start'
+                                                }}
+                                            >
+                                                <Icon size={20} />
+                                                <span style={{ fontWeight: 500 }}>{qa.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </>
+                            )}
                         </nav>
 
                         <div style={{
                             padding: '16px',
-                            borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+                            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                            display: 'flex',
+                            justifyContent: window.innerWidth >= 1024 && !sidebarOpen ? 'center' : 'flex-start'
                         }}>
                             <button
                                 className="btn-ghost"
                                 style={{
-                                    width: '100%',
+                                    width: window.innerWidth >= 1024 && !sidebarOpen ? '48px' : '100%',
+                                    height: window.innerWidth >= 1024 && !sidebarOpen ? '48px' : 'auto',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '12px',
-                                    padding: '10px 12px',
+                                    padding: window.innerWidth >= 1024 && !sidebarOpen ? '0' : '10px 12px',
                                     background: 'transparent',
                                     color: 'var(--color-text-dim)',
                                     border: 'none',
                                     borderRadius: 'var(--radius-md)',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    justifyContent: window.innerWidth >= 1024 && !sidebarOpen ? 'center' : 'flex-start'
                                 }}
+                                title={!sidebarOpen ? "Settings" : undefined}
                             >
                                 <Settings size={16} />
-                                Settings
+                                {sidebarOpen && "Settings"}
                             </button>
                         </div>
                     </>
@@ -457,26 +748,76 @@ export const ChatLayout: React.FC = () => {
                     height: '64px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '16px',
+                    justifyContent: 'space-between', // Changed for centered logo
                     padding: '0 16px',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    position: 'relative' // For absolute positioning of logo
                 }}>
-                    <button
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--color-text-secondary)',
-                            cursor: 'pointer',
-                            padding: '8px',
-                            borderRadius: 'var(--radius-md)',
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {/* Left Sidebar Toggle */}
+                        <Tooltip content={sidebarOpen ? "Close" : "Open"} placement="right">
+                            <button
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--color-text-secondary)',
+                                    cursor: 'pointer',
+                                    padding: '8px',
+                                    borderRadius: 'var(--radius-md)',
+                                    display: 'flex',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {/* Use Panel icons based on state */}
+                                {sidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+                            </button>
+                        </Tooltip>
+                    </div>
+
+                    {/* Centered Logo for Mobile ONLY */}
+                    {window.innerWidth < 1024 && (
+                        <div style={{
+                            position: 'absolute',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
                             display: 'flex',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <Menu size={20} />
-                    </button>
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}>
+                            <Logo
+                                width={24}
+                                height={24}
+                                variant="dark"
+                            />
+                            <h1 className="text-gradient" style={{ fontSize: '18px', fontWeight: 500 }}>twin3.ai</h1>
+                        </div>
+                    )}
+
+                    {/* Right Sidebar Toggle (PC Only) */}
+                    <div style={{ width: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
+                        {window.innerWidth >= 1024 && (
+                            <Tooltip content={rightSidebarOpen ? "Close" : "Quick Actions"} placement="left">
+                                <button
+                                    onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--color-text-secondary)',
+                                        cursor: 'pointer',
+                                        padding: '8px',
+                                        borderRadius: 'var(--radius-md)',
+                                        display: 'flex',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <LayoutList size={20} />
+                                </button>
+                            </Tooltip>
+                        )}
+                        {/* Space balancer for mobile if needed, but handled by flex-end */}
+                    </div>
                 </header>
 
                 {/* Content Area */}
@@ -499,7 +840,7 @@ export const ChatLayout: React.FC = () => {
                                             marginBottom: '32px'
                                         }}>
                                             <h1 style={{
-                                                fontSize: '40px',
+                                                fontSize: 'clamp(32px, 5vw, 40px)',
                                                 fontWeight: 500,
                                                 color: 'var(--color-text-primary)',
                                                 marginBottom: '16px',
@@ -510,7 +851,7 @@ export const ChatLayout: React.FC = () => {
                                             </h1>
                                             <p style={{
                                                 fontSize: '16px',
-                                                color: 'var(--color-text-primary)',
+                                                color: 'var(--gray-400)',
                                                 lineHeight: '1.6',
                                                 maxWidth: '700px',
                                                 margin: '0 auto 8px',
@@ -536,18 +877,20 @@ export const ChatLayout: React.FC = () => {
                                             }}>
                                                 {msg.content.split('\n')[5]}
                                             </p>
-                                            <button
-                                                className="btn btn-primary"
-                                                onClick={() => triggerResponse(null, 'verification_required', false)}
-                                                style={{
-                                                    padding: '14px 32px',
-                                                    fontSize: '16px',
-                                                    fontWeight: 500,
-                                                    boxShadow: 'var(--glow-primary)'
-                                                }}
-                                            >
-                                                Discover My Value
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                                                <button
+                                                    className="btn btn-primary"
+                                                    onClick={() => triggerResponse(null, 'verify_human', false)}
+                                                    style={{
+                                                        padding: '14px 32px',
+                                                        fontSize: '16px',
+                                                        fontWeight: 500,
+                                                        boxShadow: 'var(--glow-primary)'
+                                                    }}
+                                                >
+                                                    Click Here to Proof I'm a Human
+                                                </button>
+                                            </div>
                                         </div>
 
                                         {/* Feature Cards Grid */}
@@ -558,10 +901,13 @@ export const ChatLayout: React.FC = () => {
                                         }}>
                                             {features.map((feature: any, i: number) => {
                                                 // Map icon names to lucide icons
-                                                const IconComponent = feature.icon === 'target' ? Target
-                                                    : feature.icon === 'handshake' ? Handshake
-                                                        : feature.icon === 'stars' ? Sparkles
-                                                            : null;
+                                                const IconComponent = feature.icon === 'verification' ? TicketsPlane
+                                                    : feature.icon === 'matrix' ? Grid
+                                                        : feature.icon === 'agent' ? Sparkles
+                                                            : feature.icon === 'target' ? Target
+                                                                : feature.icon === 'handshake' ? Handshake
+                                                                    : feature.icon === 'stars' ? Sparkles
+                                                                        : null;
 
                                                 return (
                                                     <div
@@ -767,11 +1113,11 @@ export const ChatLayout: React.FC = () => {
                                             display: 'flex',
                                             justifyContent: 'flex-start'
                                         }}>
-                                            <TwinMatrixWidget
-                                                username="User"
-                                                onMint={() => {
-                                                    devLog('success', 'SBT Mint initiated');
-                                                    triggerResponse(null, 'mint_sbt', false);
+                                            <TwinMatrixCard
+                                                data={web3EngineerMatrixData}
+                                                onExplore={() => {
+                                                    devLog('success', 'Explore Matrix clicked');
+                                                    triggerResponse(null, 'browse_tasks', false);
                                                 }}
                                             />
                                         </div>
@@ -823,6 +1169,29 @@ export const ChatLayout: React.FC = () => {
                                                     devLog('info', `Viewing task: ${taskId}`);
                                                     // Allow clicking dashboard item to open Active Task
                                                     triggerResponse(null, 'accept_task', false); // Demo hack to show task
+                                                }}
+                                            />
+                                        </div>
+                                    );
+                                }
+
+                                if (msg.widget === 'human_verification') {
+                                    return (
+                                        <div key={msg.id} className="animate-fade-in" style={{
+                                            marginBottom: '24px',
+                                            display: 'flex',
+                                            justifyContent: 'flex-start'
+                                        }}>
+                                            <HumanVerification
+                                                onComplete={(score) => {
+                                                    devLog('success', `Verification Complete. Score: ${score}`);
+                                                    setIsVerified(true);
+                                                    // 移除自動文字回覆
+                                                    // triggerResponse(null, 'verification_success', false);
+                                                }}
+                                                onClose={() => {
+                                                    // If closed without completing, maybe just log or do nothing?
+                                                    // Or maybe trigger a "verification cancelled" message?
                                                 }}
                                             />
                                         </div>
@@ -1014,30 +1383,43 @@ export const ChatLayout: React.FC = () => {
             </main>
 
 
-            {/* Right Sidebar - Quick Actions (Desktop only) */}
-            <aside className="glass" style={{
-                width: '320px',
-                flexShrink: 0,
-                borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
-                display: window.innerWidth >= 1024 ? 'flex' : 'none',
-                flexDirection: 'column',
-                overflow: 'auto'
-            }}>
+            {/* Right Sidebar - Quick Actions */}
+            <aside
+                className="glass"
+                style={{
+                    width: rightSidebarOpen ? '280px' : '0',
+                    flexShrink: 0,
+                    borderLeft: rightSidebarOpen ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                    display: window.innerWidth < 1024 ? 'none' : 'flex',
+                    flexDirection: 'column',
+                    transition: 'all 0.3s ease',
+                    overflow: 'hidden'
+                }}
+            >
                 <div style={{
-                    height: '64px',
+                    height: '64px', // Aligned with Left Sidebar Header
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '0 24px',
+                    padding: '16px', // Aligned with Left Sidebar Header Padding
                     borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    opacity: rightSidebarOpen ? 1 : 0,
+                    transition: 'opacity 0.2s ease',
+                    whiteSpace: 'nowrap'
                 }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
                         Quick Actions
                     </h3>
                 </div>
 
-                <div style={{ padding: '24px', flex: 1 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{
+                    padding: '16px',
+                    flex: 1,
+                    overflow: 'auto',
+                    opacity: rightSidebarOpen ? 1 : 0,
+                    transition: 'opacity 0.2s ease 0.1s' // Slight delay for content fade in
+                }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {quickActions.map((qa, i) => {
                             const Icon = qa.icon;
                             return (
@@ -1046,14 +1428,15 @@ export const ChatLayout: React.FC = () => {
                                     onClick={() => triggerResponse(null, qa.action, false)}
                                     className="card card-hover"
                                     style={{
-                                        padding: '16px',
+                                        padding: '12px 16px', // Optimized padding
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '12px',
-                                        background: 'var(--glass-bg)',
+                                        background: 'var(--glass-bg)', // Keep card styling but maybe can be simpler list items if desired
                                         border: '1px solid var(--glass-border)',
                                         cursor: 'pointer',
-                                        textAlign: 'left'
+                                        textAlign: 'left',
+                                        borderRadius: 'var(--radius-md)'
                                     }}
                                 >
                                     <Icon size={20} style={{ color: 'var(--color-primary)' }} />

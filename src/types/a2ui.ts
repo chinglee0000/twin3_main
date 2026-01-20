@@ -14,6 +14,7 @@ export const WidgetType = {
     INSTAGRAM_CONNECT: 'instagram_connect',
     ACTIVE_TASK: 'active_task',
     GLOBAL_DASHBOARD: 'global_dashboard',
+    HUMAN_VERIFICATION: 'human_verification',
 } as const;
 
 export type WidgetType = typeof WidgetType[keyof typeof WidgetType];

@@ -57,7 +57,7 @@ export const TwinMatrixWidget: React.FC<TwinMatrixWidgetProps> = ({
         <div className="card animate-fade-in-scale" style={{
             maxWidth: '400px',
             padding: 0,
-            overflow: 'hidden'
+            overflow: 'visible'
         }}>
             {/* Header */}
             <div style={{

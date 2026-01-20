@@ -7,3 +7,4 @@ export { ScoreProgressWidget, VERIFICATION_TASKS } from './ScoreProgressWidget';
 export type { VerificationTask } from './ScoreProgressWidget';
 export { ActiveTaskWidget } from './ActiveTaskWidget';
 export { GlobalDashboardWidget } from './GlobalDashboardWidget';
+export { HumanVerification } from './HumanVerification';

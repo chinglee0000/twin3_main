@@ -17,11 +17,12 @@ interface DevConsoleProps {
 // Global log storage
 const globalLogs: LogEntry[] = [];
 const logListeners: Set<(logs: LogEntry[]) => void> = new Set();
+let logCounter = 0; // Counter to ensure unique IDs
 
 // Public API to add logs from anywhere in the app
 export const devLog = (type: LogEntry['type'], message: string) => {
     const entry: LogEntry = {
-        id: Date.now().toString(),
+        id: `${Date.now()}-${logCounter++}`, // Combine timestamp with counter for uniqueness
         timestamp: Date.now(),
         type,
         message
