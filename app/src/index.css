@@ -76,14 +76,22 @@
   --radius-full: 9999px;
 
   /* Twin Matrix Dimension Colors */
-  --matrix-physical: 211 85% 50%;
-  --matrix-physical-light: 211 85% 95%;
-  --matrix-social: 142 71% 45%;
-  --matrix-social-light: 142 71% 95%;
-  --matrix-digital: 271 76% 53%;
-  --matrix-digital-light: 271 76% 95%;
-  --matrix-spiritual: 27 87% 55%;
-  --matrix-spiritual-light: 27 87% 95%;
+  --matrix-physical: 8 100% 41%;
+  /* #D02800 */
+  --matrix-physical-light: 8 88% 95%;
+  /* #FDE8E5 */
+  --matrix-social: 44 100% 51%;
+  /* #FFBA08 */
+  --matrix-social-light: 44 100% 95%;
+  /* #FFF8E5 */
+  --matrix-digital: 207 52% 51%;
+  /* #3F88C5 */
+  --matrix-digital-light: 207 52% 95%;
+  /* #E8F1F9 */
+  --matrix-spiritual: 173 74% 36%;
+  /* #1A9E8F */
+  --matrix-spiritual-light: 173 42% 93%;
+  /* #E5F5F3 */
   --matrix-undiscovered: 220 9% 88%;
 }
 
@@ -428,7 +436,7 @@ textarea::placeholder {
     max-width: 100% !important;
     width: 100% !important;
   }
-  
+
   .widget-container .card {
     max-width: 100% !important;
     width: 100% !important;
@@ -440,4 +448,32 @@ textarea::placeholder {
   .widget-container .card {
     width: auto;
   }
+}
+
+/* ==================================================================
+   MOBILE IMPROVEMENTS
+   ================================================================== */
+@media (min-width: 769px) {
+  .desktop-hidden {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  /* Ensure header stays visible */
+  .mobile-header-fix {
+    position: relative;
+    z-index: 50;
+  }
+}
+
+.textarea-mobile-optimized {
+  min-height: 44px;
+  max-height: 120px;
+  padding: 10px 16px;
+  line-height: 24px;
 }

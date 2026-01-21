@@ -27,24 +27,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             justifyContent: isUser ? 'flex-end' : 'flex-start',
             marginBottom: '16px',
             paddingLeft: isUser ? '60px' : '0',
-            paddingRight: isUser ? '0' : '60px'
+            paddingRight: isUser ? '0' : '24px' // Reduce padding for AI
         }}>
             {/* Message Bubble */}
             <div style={{
-                maxWidth: '80%',
-                padding: '14px 18px',
-                borderRadius: isUser ? '20px 20px 6px 20px' : '20px 20px 20px 6px',
+                maxWidth: isUser ? '80%' : '100%',
+                padding: isUser ? '14px 18px' : '0 16px', // No padding for AI (except horizontal)
+                borderRadius: isUser ? '20px 20px 6px 20px' : '0',
                 background: isUser
                     ? 'rgba(255, 255, 255, 0.12)'
-                    : 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(10px)'
+                    : 'transparent',
+                border: isUser ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                backdropFilter: isUser ? 'blur(10px)' : 'none'
             }}>
                 <div
                     style={{
                         color: 'var(--color-text-primary)',
-                        fontSize: '14px',
-                        lineHeight: '1.5'
+                        fontSize: isUser ? '14px' : '16px', // Slightly larger font for AI
+                        lineHeight: '1.6'
                     }}
                     dangerouslySetInnerHTML={{ __html: parsedContent }}
                 />

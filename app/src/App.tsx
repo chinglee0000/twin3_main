@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { ChatLayout } from './features/chat/ChatLayout';
-import { VerificationFlowDemo } from './pages/VerificationFlowDemo';
 import './index.css';
 
 function App() {
@@ -26,11 +25,9 @@ function App() {
     return () => matcher.removeEventListener('change', updateFavicon);
   }, []);
 
-  const isPOC = window.location.pathname === '/poc';
-
   return (
     <div className="h-screen w-full bg-[#0f111a] text-[#e6e8f0] overflow-hidden">
-      {isPOC ? <VerificationFlowDemo /> : <ChatLayout />}
+      <ChatLayout />
     </div>
   );
 }

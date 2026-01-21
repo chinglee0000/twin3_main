@@ -258,66 +258,66 @@ const kolTraitValues: Record<string, {
 
 // Generate all 256 traits with unlock metadata
 const generateKOLTraits = (): MatrixTrait[] => {
-    const traits: MatrixTrait[] = [];
+  const traits: MatrixTrait[] = [];
 
-    for (let i = 0; i < 256; i++) {
-        const hexId = i.toString(16).toUpperCase().padStart(2, '0');
-        const dimension = getDimensionFromHexId(hexId);
-        const row = Math.floor(i / 16);
-        const col = i % 16;
+  for (let i = 0; i < 256; i++) {
+    const hexId = i.toString(16).toUpperCase().padStart(2, '0');
+    const dimension = getDimensionFromHexId(hexId);
+    const row = Math.floor(i / 16);
+    const col = i % 16;
 
-        const traitData = kolTraitValues[hexId];
-        const isDiscovered = !!traitData;
+    const traitData = kolTraitValues[hexId];
+    const isDiscovered = !!traitData;
 
-        traits.push({
-            id: hexId,
-            dimension: dimension,
-            discovered: isDiscovered,
-            strength: traitData?.strength,
-            position: { row, col },
-            name: traitData?.name,
-            description: traitData?.description,
-            unlockedBy: traitData?.unlockedBy,
-            unlockedAt: isDiscovered 
-                ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString() 
-                : undefined,
-        });
-    }
+    traits.push({
+      id: hexId,
+      dimension: dimension,
+      discovered: isDiscovered,
+      strength: traitData?.strength,
+      position: { row, col },
+      name: traitData?.name,
+      description: traitData?.description,
+      unlockedBy: traitData?.unlockedBy,
+      unlockedAt: isDiscovered
+        ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+        : undefined,
+    });
+  }
 
-    return traits;
+  return traits;
 };
 
 // Export complete KOL Matrix Data with exact statistics from specification
 export const travelKOLMatrixData: TwinMatrixData = {
-    totalTraits: 256,
-    discoveredTraits: 38,
-    journeyProgress: 14.8,
-    avgStrength: 67.1,
-    humanityIndex: 135,
+  totalTraits: 256,
+  discoveredTraits: 38,
+  journeyProgress: 14.8,
+  avgStrength: 67.1,
+  humanityIndex: 135,
 
-    dimensions: {
-        physical: {
-            discovered: 6,
-            total: 64,
-            percentage: 9,
-        },
-        social: {
-            discovered: 10,
-            total: 64,
-            percentage: 16,
-        },
-        digital: {
-            discovered: 10,
-            total: 64,
-            percentage: 16,
-        },
-        spiritual: {
-            discovered: 12,
-            total: 64,
-            percentage: 19,
-        },
+  dimensions: {
+    physical: {
+      discovered: 6,
+      total: 64,
+      percentage: 9,
     },
+    social: {
+      discovered: 10,
+      total: 64,
+      percentage: 16,
+    },
+    digital: {
+      discovered: 10,
+      total: 64,
+      percentage: 16,
+    },
+    spiritual: {
+      discovered: 12,
+      total: 64,
+      percentage: 19,
+    },
+  },
 
-    traits: generateKOLTraits(),
-    recentlyUnlockedTrait: 'D4',
+  traits: generateKOLTraits(),
+  recentlyUnlockedTrait: 'D4',
 };

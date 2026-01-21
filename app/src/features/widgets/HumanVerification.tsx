@@ -6,20 +6,20 @@ import {
     WIDGET_STATES,
     ANIMATION_DURATION,
     verificationMethods,
-} from '../../components/HumanVerification';
-import type { FlowState, VerificationMethod } from '../../components/HumanVerification/types';
+} from '../human-verification';
+import type { FlowState, VerificationMethod } from '../human-verification/components/types';
 
 // Import sub-components (removed HumanityStatusCard - not needed)
-import { VerificationOptions } from '../../components/HumanVerification/components/VerificationOptions';
-import { VerificationLoader } from '../../components/HumanVerification/components/VerificationLoader';
+import { VerificationOptions } from '../human-verification/components/VerificationOptions';
+import { VerificationLoader } from '../human-verification/components/VerificationLoader';
 
 // Import TwinMatrixCard (16x16 grid)
-import { TwinMatrixCard } from '../cards/TwinMatrixCard';
+import { TwinMatrixCard } from '../twin-matrix/TwinMatrixCard';
 import {
     initialMatrixData,
     travelKOLMatrixData,
-} from '../../components/HumanVerification/data/mockProfiles';
-import type { TwinMatrixData } from '../cards/twin-matrix/types';
+} from '../human-verification/data/mockProfiles';
+import type { TwinMatrixData } from '../twin-matrix/types';
 
 interface HumanVerificationProps {
     onClose?: () => void;

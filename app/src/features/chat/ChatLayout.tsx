@@ -1,14 +1,14 @@
 import { useRef, useState, useEffect } from 'react';
 import { Settings, Send, Sparkles, LayoutDashboard, CheckSquare, X, Coins, Clock, Users, Terminal, Plus, Target, Handshake, HelpCircle, Grid, PanelLeftOpen, PanelLeftClose, LayoutList, Shield, FileText, TicketsPlane, History as HistoryIcon } from 'lucide-react';
-import { Tooltip } from '../../components/Tooltip';
-import { Logo } from '../../components/Logo';
+import { Tooltip } from '../../components/ui/Tooltip';
+import { Logo } from '../../components/ui/Logo';
 import type { Message } from '../../types';
 import type { Suggestion } from '../../types/a2ui';
 import type { TaskOpportunityPayload } from '../../types';
 import { MessageBubble } from './MessageBubble';
-import { TaskDetailModal } from '../cards/TaskDetailModal';
-import { TwinMatrixCard } from '../cards/TwinMatrixCard';
-import { web3EngineerMatrixData } from '../cards/twin-matrix/mockData';
+import { TaskDetailModal } from '../twin-matrix/components/TaskDetailModal';
+import { TwinMatrixCard } from '../twin-matrix/TwinMatrixCard';
+import { web3EngineerMatrixData } from '../twin-matrix/mockData';
 import { INTERACTION_INVENTORY } from '../../data/inventory';
 import { generateAgentResponse, isAIEnabled, generateSuggestions } from '../../services/geminiService';
 import { DevConsole, devLog, InstagramConnectWidget, ActiveTaskWidget, GlobalDashboardWidget, HumanVerification } from '../widgets';
@@ -37,7 +37,9 @@ export const ChatLayout: React.FC = () => {
     ];
 
     useEffect(() => {
-        if (scrollRef.current) {
+        // Only scroll if we have more than just welcome message to avoid auto-scroll on landing
+        // This ensures the user stays at the top/welcome message when first opening the app
+        if (scrollRef.current && messages.length > 1) {
             scrollRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [messages, isTyping, suggestions]);
@@ -282,7 +284,7 @@ export const ChatLayout: React.FC = () => {
     return (
         <div style={{
             display: 'flex',
-            height: '100vh',
+            height: '100dvh', // Use dvh to handle mobile browser address bars
             width: '100vw',
             position: 'relative',
             zIndex: 2
@@ -320,7 +322,7 @@ export const ChatLayout: React.FC = () => {
                     position: window.innerWidth < 1024 ? 'fixed' : 'relative',
                     left: 0,
                     top: 0,
-                    height: '100vh',
+                    height: '100dvh',
                     zIndex: 999,
                     transform: window.innerWidth < 1024 && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)',
                     // Ensure hidden text doesn't cause layout shifting during transition
@@ -752,7 +754,8 @@ export const ChatLayout: React.FC = () => {
                     padding: '0 16px',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                     flexShrink: 0,
-                    position: 'relative' // For absolute positioning of logo
+                    position: 'relative', // For absolute positioning of logo
+                    zIndex: 50 // Ensure header stays on top
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {/* Left Sidebar Toggle */}
@@ -776,24 +779,22 @@ export const ChatLayout: React.FC = () => {
                         </Tooltip>
                     </div>
 
-                    {/* Centered Logo for Mobile ONLY */}
-                    {window.innerWidth < 1024 && (
-                        <div style={{
-                            position: 'absolute',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            <Logo
-                                width={24}
-                                height={24}
-                                variant="dark"
-                            />
-                            <h1 className="text-gradient" style={{ fontSize: '18px', fontWeight: 500 }}>twin3.ai</h1>
-                        </div>
-                    )}
+                    {/* Centered Logo for Mobile - Always render but hide on desktop via CSS to prevent flicker */}
+                    <div className="desktop-hidden" style={{
+                        position: 'absolute',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <Logo
+                            width={24}
+                            height={24}
+                            variant="dark"
+                        />
+                        <h1 className="text-gradient" style={{ fontSize: '18px', fontWeight: 500 }}>twin3.ai</h1>
+                    </div>
 
                     {/* Right Sidebar Toggle (PC Only) */}
                     <div style={{ width: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
@@ -1244,7 +1245,7 @@ export const ChatLayout: React.FC = () => {
 
                 {/* Suggestions */}
                 {suggestions.length > 0 && !isTyping && (
-                    <div style={{
+                    <div className="mobile-hidden" style={{
                         padding: '0 16px 12px',
                         flexShrink: 0
                     }}>
@@ -1269,113 +1270,107 @@ export const ChatLayout: React.FC = () => {
                     </div>
                 )}
 
-                {/* Input Area - Gemini Style */}
+                {/* Input Area - Compact Gemini/GPT Style */}
                 <div style={{
-                    padding: '16px',
+                    padding: '8px 12px 12px',
                     flexShrink: 0
                 }}>
                     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                         <div style={{
                             background: 'rgba(32, 33, 36, 0.95)',
-                            borderRadius: '24px',
+                            borderRadius: '28px',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
-                            overflow: 'hidden'
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            padding: '8px 8px 8px 16px',
+                            gap: '8px'
                         }}>
-                            {/* Text Input Row */}
-                            <div style={{ padding: '16px 20px 8px' }}>
-                                <textarea
-                                    ref={inputRef}
-                                    value={inputValue}
-                                    onChange={(e) => {
-                                        setInputValue(e.target.value);
-                                        if (inputRef.current) {
-                                            inputRef.current.style.height = 'auto';
-                                            inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 150)}px`;
-                                        }
-                                    }}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Ask twin3..."
-                                    rows={1}
-                                    disabled={isTyping}
+                            {/* Left: + Button */}
+                            <button
+                                style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--color-text-dim)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}
+                                title="Attach"
+                            >
+                                <Plus size={20} />
+                            </button>
+
+                            {/* Center: Textarea */}
+                            <textarea
+                                ref={inputRef}
+                                value={inputValue}
+                                onChange={(e) => {
+                                    setInputValue(e.target.value);
+                                    if (inputRef.current) {
+                                        inputRef.current.style.height = '24px';
+                                        inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
+                                    }
+                                }}
+                                onKeyDown={handleKeyDown}
+                                placeholder="Ask twin3..."
+                                rows={1}
+                                disabled={isTyping}
+                                style={{
+                                    flex: 1,
+                                    background: 'transparent',
+                                    border: 'none',
+                                    outline: 'none',
+                                    resize: 'none',
+                                    color: 'var(--color-text-primary)',
+                                    fontSize: '16px',
+                                    lineHeight: '24px',
+                                    height: '24px',
+                                    maxHeight: '120px',
+                                    fontFamily: 'inherit',
+                                    padding: '0',
+                                    margin: '4px 0'
+                                }}
+                            />
+
+                            {/* Right: Status + Send */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                {/* Status Indicator */}
+                                <div style={{
+                                    width: '6px',
+                                    height: '6px',
+                                    borderRadius: '50%',
+                                    background: isAIEnabled() ? '#30d158' : 'var(--color-text-dim)'
+                                }} title={isAIEnabled() ? 'AI Connected' : 'Demo Mode'} />
+
+                                {/* Send Button */}
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={!inputValue.trim() || isTyping}
                                     style={{
-                                        width: '100%',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        outline: 'none',
-                                        resize: 'none',
-                                        color: 'var(--color-text-primary)',
-                                        fontSize: '16px',
-                                        lineHeight: '1.5',
-                                        maxHeight: '150px',
-                                        fontFamily: 'inherit'
-                                    }}
-                                />
-                            </div>
-
-                            {/* Bottom Tools Row */}
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '8px 12px 12px 16px'
-                            }}>
-                                {/* Left: Tools */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <button
-                                        style={{
-                                            width: '36px',
-                                            height: '36px',
-                                            borderRadius: '50%',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: 'var(--color-text-dim)',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        title="Attach"
-                                    >
-                                        <Plus size={20} />
-                                    </button>
-                                </div>
-
-                                {/* Right: Send & Status */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    {/* Status Indicator */}
-                                    <div style={{
-                                        width: '8px',
-                                        height: '8px',
+                                        width: '32px',
+                                        height: '32px',
                                         borderRadius: '50%',
-                                        background: isAIEnabled() ? '#30d158' : 'var(--color-text-dim)'
-                                    }} title={isAIEnabled() ? 'AI Connected' : 'Demo Mode'} />
-
-                                    {/* Send Button */}
-                                    <button
-                                        onClick={handleSubmit}
-                                        disabled={!inputValue.trim() || isTyping}
-                                        style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '50%',
-                                            background: inputValue.trim() && !isTyping
-                                                ? 'rgba(255, 255, 255, 0.1)'
-                                                : 'transparent',
-                                            border: 'none',
-                                            color: inputValue.trim() && !isTyping
-                                                ? 'var(--color-text-primary)'
-                                                : 'var(--color-text-dim)',
-                                            cursor: inputValue.trim() && !isTyping ? 'pointer' : 'default',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        <Send size={18} />
-                                    </button>
-                                </div>
+                                        background: inputValue.trim() && !isTyping
+                                            ? 'rgba(255, 255, 255, 0.15)'
+                                            : 'transparent',
+                                        border: 'none',
+                                        color: inputValue.trim() && !isTyping
+                                            ? 'var(--color-text-primary)'
+                                            : 'var(--color-text-dim)',
+                                        cursor: inputValue.trim() && !isTyping ? 'pointer' : 'default',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <Send size={16} />
+                                </button>
                             </div>
                         </div>
                     </div>
