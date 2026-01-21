@@ -9,8 +9,8 @@
  * - Humanity Index: 135 / 255
  */
 
-import type { TwinMatrixData, MatrixTrait } from '../features/cards/twin-matrix/types';
-import { getDimensionFromHexId } from '../features/cards/twin-matrix/utils';
+import type { TwinMatrixData, MatrixTrait } from '../features/twin-matrix/types';
+import { getDimensionFromHexId } from '../features/twin-matrix/utils';
 
 // Complete trait definitions with English descriptions and unlock metadata
 const kolTraitValues: Record<string, {

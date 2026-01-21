@@ -7,7 +7,7 @@
 
 import React from 'react';
 import * as Icons from 'lucide-react';
-import type { VerificationMethod, MethodCardVariant } from './types';
+import type { VerificationMethod } from './types';
 
 interface VerificationMethodCardProps {
     methods: VerificationMethod[];

@@ -5,7 +5,7 @@
  */
 
 // Main Component
-export { TwinMatrixCard } from '../TwinMatrixCard';
+export { TwinMatrixCard } from './TwinMatrixCard';
 
 // Types
 export type {

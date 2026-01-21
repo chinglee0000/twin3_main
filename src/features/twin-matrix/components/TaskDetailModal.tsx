@@ -1,5 +1,5 @@
 import { X, Coins, Gift, Clock, CheckCircle } from 'lucide-react';
-import type { TaskOpportunityPayload } from '../../types';
+import type { TaskOpportunityPayload } from '../../../types';
 
 interface TaskDetailModalProps {
     task: TaskOpportunityPayload;
