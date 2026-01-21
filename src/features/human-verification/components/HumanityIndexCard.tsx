@@ -1,6 +1,6 @@
 import React from 'react';
 import { Lock, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react';
-import { verificationMethods } from '../../components/HumanVerification/data/verificationMethods';
+import { verificationMethods } from '../data/verificationMethods';
 
 // ============================================================
 // Types
@@ -92,8 +92,8 @@ export const HumanityIndexCard: React.FC<HumanityIndexCardProps> = ({
     const isUnlocked = currentScore > 0; // Simple unlock logic based on score > 0 for demo
 
     // Sort methods: Completed first
-    const completedMethods = verificationMethods.filter(m => completedMethodIds.includes(m.id));
-    const availableMethods = verificationMethods.filter(m => !completedMethodIds.includes(m.id)).slice(0, 5); // Show top 5 available
+    const completedMethods = (verificationMethods as any[]).filter((m: any) => completedMethodIds.includes(m.id));
+    const availableMethods = (verificationMethods as any[]).filter((m: any) => !completedMethodIds.includes(m.id)).slice(0, 5); // Show top 5 available
 
     return (
         <div className="card" style={{ maxWidth: '420px', width: '100%', margin: '0 auto' }}>
@@ -112,7 +112,7 @@ export const HumanityIndexCard: React.FC<HumanityIndexCardProps> = ({
                         Completed Verifications
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {completedMethods.map(method => (
+                        {completedMethods.map((method: any) => (
                             <div key={method.id} style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -166,7 +166,7 @@ export const HumanityIndexCard: React.FC<HumanityIndexCardProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {availableMethods.map(method => (
+                    {availableMethods.map((method: any) => (
                         <div key={method.id} style={{
                             display: 'flex',
                             alignItems: 'center',

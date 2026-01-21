@@ -1,4 +1,4 @@
-import type { TwinMatrixData } from '../features/cards/twin-matrix/types';
+import type { TwinMatrixData } from '../features/twin-matrix/types';
 
 // Initial Twin Matrix State - After completing first verification (Google reCAPTCHA v2)
 // Only trait 00 (Humanity Index) is discovered with value 135

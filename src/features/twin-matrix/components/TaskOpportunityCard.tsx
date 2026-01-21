@@ -1,5 +1,5 @@
 import { Gift, Coins, Users, ExternalLink, X } from 'lucide-react';
-import type { TaskOpportunityPayload } from '../../types';
+import type { TaskOpportunityPayload } from '../../../types';
 
 interface TaskOpportunityCardProps {
     data: TaskOpportunityPayload;
