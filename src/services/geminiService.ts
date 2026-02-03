@@ -1,4 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
+import type { ContextId } from '../types/context';
+import { getAIContextPrompt } from '../config/contentRegistry';
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -30,7 +32,8 @@ export interface GeminiResponse {
 
 export const generateAgentResponse = async (
     userMessage: string,
-    conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
+    conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [],
+    contextId?: ContextId
 ): Promise<GeminiResponse> => {
     // Guard clause - no API key
     if (!apiKey || apiKey.length === 0) {
@@ -45,6 +48,13 @@ export const generateAgentResponse = async (
         const ai = new GoogleGenAI({ apiKey });
         const modelId = 'gemini-2.0-flash';
 
+        // Build context-aware system prompt
+        let enhancedSystemPrompt = SYSTEM_PROMPT;
+        if (contextId) {
+            const contextPrompt = getAIContextPrompt(contextId);
+            enhancedSystemPrompt += `\n\nCURRENT USER CONTEXT:\n${contextPrompt}`;
+        }
+
         // Build conversation contents
         const contents = [
             ...conversationHistory.map(msg => ({
@@ -58,7 +68,7 @@ export const generateAgentResponse = async (
             model: modelId,
             contents: contents,
             config: {
-                systemInstruction: SYSTEM_PROMPT,
+                systemInstruction: enhancedSystemPrompt,
                 maxOutputTokens: 256,
                 temperature: 0.7
             }

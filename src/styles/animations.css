@@ -1,0 +1,64 @@
+/* ==================================================================
+   Twin3 — Animations
+   ================================================================== */
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-in-scale {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: var(--glow-primary);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+    }
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+/* Animation Classes */
+.animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+}
+
+.animate-fade-in-scale {
+    animation: fade-in-scale 0.25s ease-out;
+}
+
+.animate-pulse-glow {
+    animation: pulse-glow 2s infinite;
+}

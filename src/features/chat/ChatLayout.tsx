@@ -5,15 +5,20 @@ import { Logo } from '../../components/ui/Logo';
 import type { Message } from '../../types';
 import type { Suggestion } from '../../types/a2ui';
 import type { TaskOpportunityPayload } from '../../types';
+import type { ContextId } from '../../types/context';
 import { MessageBubble } from './MessageBubble';
 import { TaskDetailModal } from '../twin-matrix/components/TaskDetailModal';
 import { TwinMatrixCard } from '../twin-matrix/TwinMatrixCard';
-import { web3EngineerMatrixData } from '../twin-matrix/mockData';
+import { web3EngineerMatrixData } from '../../data/matrix/twinMatrixMockData';
 import { INTERACTION_INVENTORY } from '../../data/inventory';
 import { generateAgentResponse, isAIEnabled, generateSuggestions } from '../../services/geminiService';
 import { DevConsole, devLog, InstagramConnectWidget, ActiveTaskWidget, GlobalDashboardWidget, HumanVerification } from '../widgets';
 
-export const ChatLayout: React.FC = () => {
+interface ChatLayoutProps {
+    contextId?: ContextId;
+}
+
+export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [isTyping, setIsTyping] = useState(false);

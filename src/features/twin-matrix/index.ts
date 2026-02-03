@@ -19,4 +19,5 @@ export type {
 export { getTraitColor, getTraitBackgroundColor, getDisplayRange, getDimensionFromHexId } from './utils';
 
 // Mock Data (for development/demo)
-export { web3EngineerMatrixData } from './mockData';
+export { web3EngineerMatrixData, travelKOLMatrixData } from '../../data/matrix/twinMatrixMockData';
+

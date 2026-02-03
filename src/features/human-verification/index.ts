@@ -22,7 +22,8 @@ export {
     initialMatrixData,
     travelKOLMatrixData,
     travelKOLInfo,
-} from './data/mockProfiles';
+} from '../../data/profiles/mockProfiles';
+
 
 // Components
 export { VerificationOptions } from './components/VerificationOptions';

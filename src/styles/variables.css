@@ -1,0 +1,83 @@
+/* ==================================================================
+   Twin3 Design System — CSS Variables
+   Color palette, typography, spacing, and design tokens
+   ================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ============================================================
+     COLOR PALETTE — Minimalist Elite (White to Gray)
+     iOS-inspired glassmorphism
+     ============================================================ */
+  --color-bg-base: #000000;
+  --color-bg-elevated: #0a0a0a;
+  --color-bg-card: rgba(28, 28, 30, 0.6);
+
+  /* Tailwind Gray Scale - Unified System */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Accent Colors */
+  --color-primary: #ffffff;
+  --color-primary-glow: rgba(255, 255, 255, 0.12);
+  --color-secondary: #8e8e93;
+  --color-accent: #86868b;
+  --color-success: #30d158;
+  --color-warning: #ff9f0a;
+  --color-info: #8B5CF6;
+
+  /* Text Colors */
+  --color-text-primary: var(--gray-50);
+  --color-text-secondary: var(--gray-400);
+  --color-text-dim: var(--gray-600);
+
+  /* iOS Glassmorphism */
+  --glass-bg: rgba(28, 28, 30, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: 40px;
+
+  /* Shadows & Glows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.56);
+  --glow-primary: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --glow-accent: 0 0 24px rgba(255, 255, 255, 0.06);
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Twin Matrix Dimension Colors */
+  --matrix-physical: 8 100% 41%;
+  --matrix-physical-light: 8 88% 95%;
+  --matrix-social: 44 100% 51%;
+  --matrix-social-light: 44 100% 95%;
+  --matrix-digital: 207 52% 51%;
+  --matrix-digital-light: 207 52% 95%;
+  --matrix-spiritual: 173 74% 36%;
+  --matrix-spiritual-light: 173 42% 93%;
+  --matrix-undiscovered: 220 9% 88%;
+}

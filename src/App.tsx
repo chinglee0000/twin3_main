@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
 import { ChatLayout } from './features/chat/ChatLayout';
+import { useContextResolver } from './hooks/useContextResolver';
 import './index.css';
 
 function App() {
+  // Initialize context-aware routing
+  const { contextId } = useContextResolver();
 
   // Dynamic Favicon Logic
   useEffect(() => {
@@ -27,9 +30,10 @@ function App() {
 
   return (
     <div className="h-screen w-full bg-[#0f111a] text-[#e6e8f0] overflow-hidden">
-      <ChatLayout />
+      <ChatLayout contextId={contextId} />
     </div>
   );
 }
 
 export default App;
+

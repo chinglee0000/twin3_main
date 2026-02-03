@@ -1,0 +1,61 @@
+/* ==================================================================
+   Twin3 — Utilities & Responsive
+   ================================================================== */
+
+/* UTILITY CLASSES */
+.text-gradient {
+    color: var(--color-text-primary);
+}
+
+.glow-text {
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+}
+
+/* WIDGET RESPONSIVE */
+.widget-container {
+    width: 100%;
+}
+
+@media (max-width: 767px) {
+    .card {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .widget-container .card {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .widget-container .card {
+        width: auto;
+    }
+}
+
+/* RESPONSIVE VISIBILITY */
+@media (min-width: 769px) {
+    .desktop-hidden {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-hidden {
+        display: none !important;
+    }
+
+    .mobile-header-fix {
+        position: relative;
+        z-index: 50;
+    }
+}
+
+/* MOBILE TEXTAREA */
+.textarea-mobile-optimized {
+    min-height: 44px;
+    max-height: 120px;
+    padding: 10px 16px;
+    line-height: 24px;
+}
