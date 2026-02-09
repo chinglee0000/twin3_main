@@ -31,10 +31,11 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
                         description: 'Empower an agent that carries your preferences to work, earn, and filter noise. Your twin manages the digital clutter while you reclaim your time to live.'
                     }
                 ]
-            }
+            },
+            layout: 'hero'
         },
         suggestedActions: [
-            { label: 'Mint Free SBT', payload: 'verify_human' },
+            { label: "Proof I'm a Human", payload: 'verify_human' },
             { label: 'What is SBT?', payload: 'sbt_info' },
             { label: 'Why Verify Humanity?', payload: 'why_verify' }
         ]

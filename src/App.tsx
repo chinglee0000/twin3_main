@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { ChatLayout } from './features/chat/ChatLayout';
 import { useContextResolver } from './hooks/useContextResolver';
-import './index.css';
+import './styles/index.css';
 
 function App() {
   // Initialize context-aware routing

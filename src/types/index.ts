@@ -44,6 +44,7 @@ export interface Message {
     content: string;
     cardData?: CardData;
     widget?: string;  // Widget type to render inline (e.g., 'twin_matrix')
+    layout?: 'hero' | 'default';
     timestamp: number;
 }
 

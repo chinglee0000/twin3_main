@@ -37,6 +37,7 @@ export interface InteractionNode {
         delay?: number;
         card?: CardData;
         widget?: WidgetType;  // Optional widget to render
+        layout?: 'hero' | 'default';
     };
     suggestedActions?: Suggestion[];
 }

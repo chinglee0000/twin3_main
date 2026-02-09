@@ -7,389 +7,12 @@
  * - Social (rows 8-15, cols 0-7): Yellow #FFBA08
  * - Spiritual (rows 8-15, cols 8-15): Teal #1A9E8F
  */
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, Info, Lock, X } from 'lucide-react';
+import { ArrowRight, Info, X } from 'lucide-react';
 import type { TwinMatrixData, MatrixTrait } from './types';
 import { TwinMatrixModal } from './TwinMatrixModal';
-
-// ============================================================
-// Color Utility Functions
-// ============================================================
-
-const DIMENSION_COLORS = {
-    physical: '#D02800',
-    social: '#FFBA08',
-    digital: '#3F88C5',
-    spiritual: '#1A9E8F',
-    undiscoveredFill: 'transparent',
-    undiscoveredStroke: '#374151', // Gray 700 stroke
-};
-
-
-// ============================================================
-// Tooltip Components (inline for simplicity)
-// ============================================================
-
-interface TooltipProps {
-    children: React.ReactNode;
-    content: React.ReactNode;
-    disabled?: boolean;
-}
-
-function Tooltip({ children, content, disabled }: TooltipProps) {
-    const [open, setOpen] = useState(false);
-    const [position, setPosition] = useState({ x: 0, y: 0 });
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const triggerRef = useRef<HTMLDivElement>(null);
-
-    const handleMouseEnter = () => {
-        if (triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            setPosition({
-                x: rect.left + rect.width / 2,
-                y: rect.top - 8
-            });
-        }
-        timeoutRef.current = setTimeout(() => setOpen(true), 100);
-    };
-
-    const handleMouseLeave = () => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        setOpen(false);
-    };
-
-    useEffect(() => {
-        return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        };
-    }, []);
-
-    const tooltipContent = open ? createPortal(
-        <div
-            role="tooltip"
-            style={{
-                position: 'fixed',
-                top: position.y,
-                left: position.x,
-                transform: 'translate(-50%, -100%)',
-                zIndex: 99999,
-                background: 'rgba(28, 28, 30, 0.95)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                fontSize: '13px',
-                color: 'var(--color-text-primary, #ffffff)',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-                whiteSpace: 'normal',
-                animation: 'fade-in 0.15s ease-out',
-                pointerEvents: 'none',
-                maxWidth: '280px',
-            }}
-        >
-            {content}
-        </div>,
-        document.body
-    ) : null;
-
-    if (disabled) return <>{children}</>;
-
-    return (
-        <div
-            ref={triggerRef}
-            style={{ position: 'relative', display: 'inline-block' }}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-        >
-            {children}
-            {tooltipContent}
-        </div>
-    );
-}
-
-// ============================================================
-// Twin Matrix Grid Component (16x16)
-// ============================================================
-
-interface TwinMatrixGridProps {
-    data: TwinMatrixData;
-    onCellClick?: (trait: MatrixTrait & { displayDimension: string }) => void;
-    isTouchDevice?: boolean;
-}
-
-function TwinMatrixGrid({ data, onCellClick, isTouchDevice }: TwinMatrixGridProps) {
-    /**
-     * Quadrant Layout:
-     * ┌─────────────┬─────────────┐
-     * │  Physical   │   Digital   │
-     * │  (rows 0-7) │  (rows 0-7) │
-     * │  cols 0-7   │  cols 8-15  │
-     * ├─────────────┼─────────────┤
-     * │   Social    │  Spiritual  │
-     * │  (rows 8-15)│  (rows 8-15)│
-     * │  cols 0-7   │  cols 8-15  │
-     * └─────────────┴─────────────┘
-     */
-
-    // Reorganize traits into quadrant layout
-    const getQuadrantDimension = (row: number, col: number): 'physical' | 'social' | 'digital' | 'spiritual' => {
-        if (row < 8 && col < 8) return 'physical';      // Top-left
-        if (row < 8 && col >= 8) return 'digital';      // Top-right
-        if (row >= 8 && col < 8) return 'social';       // Bottom-left
-        return 'spiritual';                              // Bottom-right
-    };
-
-    // Map original linear traits to quadrant positions
-    const getTraitForQuadrant = (row: number, col: number) => {
-        const dimension = getQuadrantDimension(row, col);
-
-        // Calculate local position within the 8x8 quadrant
-        const localRow = row < 8 ? row : row - 8;
-        const localCol = col < 8 ? col : col - 8;
-        const localIndex = localRow * 8 + localCol;
-
-        // Get the original trait based on dimension ranges
-        // Physical: 00-3F (0-63), Social: 40-7F (64-127), Digital: 80-BF (128-191), Spiritual: C0-FF (192-255)
-        let globalIndex: number;
-        switch (dimension) {
-            case 'physical': globalIndex = localIndex; break;
-            case 'social': globalIndex = 64 + localIndex; break;
-            case 'digital': globalIndex = 128 + localIndex; break;
-            case 'spiritual': globalIndex = 192 + localIndex; break;
-        }
-
-        const trait = data.traits[globalIndex];
-        return { ...trait, displayDimension: dimension };
-    };
-
-    // Generate 16x16 grid with quadrant layout
-    const gridCells = [];
-    for (let row = 0; row < 16; row++) {
-        for (let col = 0; col < 16; col++) {
-            gridCells.push(getTraitForQuadrant(row, col));
-        }
-    }
-
-    return (
-        <div
-            style={{
-                width: '100%',
-                aspectRatio: '1',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(16, 1fr)',
-                gridTemplateRows: 'repeat(16, 1fr)',
-                gap: isTouchDevice ? '2px' : '4px', // 2px on mobile, 4px on desktop
-                padding: 0,
-                background: 'transparent',
-                borderRadius: 'var(--radius-md, 12px)',
-                marginBottom: '10px', // Add some safety margin
-            }}
-        >
-            {
-                gridCells.map((trait, index) => (
-                    <Tooltip
-                        key={`${trait.id}-${index}`}
-                        disabled={isTouchDevice}
-                        content={
-                            <div style={{ width: '240px', padding: '4px' }}>
-                                {/* Header: Trait Name & ID */}
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'flex-start',
-                                    marginBottom: '10px',
-                                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                                    paddingBottom: '8px'
-                                }}>
-                                    <div>
-                                        <div style={{
-                                            fontWeight: 700,
-                                            fontSize: '14px',
-                                            color: trait.discovered ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                                            lineHeight: '1.2'
-                                        }}>
-                                            {trait.discovered ? (trait.name || trait.id) : `Locked Trait`}
-                                        </div>
-                                        <div style={{
-                                            fontSize: '11px',
-                                            color: 'var(--color-text-dim)',
-                                            marginTop: '2px',
-                                            fontFamily: 'monospace'
-                                        }}>
-                                            ID: {trait.id}
-                                        </div>
-                                    </div>
-                                    {trait.discovered && (
-                                        <div style={{
-                                            fontSize: '10px',
-                                            padding: '1px 5px', // Adjusted for border
-                                            borderRadius: '4px',
-                                            background: 'transparent',
-                                            border: `1px solid ${DIMENSION_COLORS[trait.displayDimension as keyof typeof DIMENSION_COLORS] || '#fff'}`,
-                                            color: DIMENSION_COLORS[trait.displayDimension as keyof typeof DIMENSION_COLORS] || '#fff',
-                                            fontWeight: 600,
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.5px'
-                                        }}>
-                                            {trait.dimension?.slice(0, 3)}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {trait.discovered ? (
-                                    <>
-                                        {/* Strength Bar */}
-                                        <div style={{ marginBottom: '12px' }}>
-                                            <div style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                fontSize: '11px',
-                                                marginBottom: '4px',
-                                                color: 'var(--color-text-secondary)'
-                                            }}>
-                                                <span>Strength</span>
-                                                <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
-                                                    {Math.round(((trait.strength || 0) / 255) * 100)}%
-                                                </span>
-                                            </div>
-                                            <div style={{
-                                                width: '100%',
-                                                height: '4px',
-                                                background: 'rgba(255,255,255,0.1)',
-                                                borderRadius: '2px',
-                                                overflow: 'hidden'
-                                            }}>
-                                                <div style={{
-                                                    width: `${Math.round(((trait.strength || 0) / 255) * 100)}%`,
-                                                    height: '100%',
-                                                    background: DIMENSION_COLORS[trait.displayDimension as keyof typeof DIMENSION_COLORS] || '#fff'
-                                                }} />
-                                            </div>
-                                        </div>
-
-                                        {/* Description */}
-                                        {trait.description && (
-                                            <div style={{
-                                                fontSize: '12px',
-                                                color: 'var(--color-text-secondary)',
-                                                lineHeight: '1.5',
-                                                marginBottom: '10px',
-                                                background: 'rgba(255,255,255,0.03)',
-                                                padding: '8px',
-                                                borderRadius: '6px'
-                                            }}>
-                                                {trait.description}
-                                            </div>
-                                        )}
-
-                                        {/* Metadata Footer */}
-                                        <div style={{
-                                            display: 'flex',
-                                            gap: '8px',
-                                            fontSize: '10px',
-                                            color: 'var(--color-text-dim)',
-                                            alignItems: 'center'
-                                        }}>
-                                            {trait.unlockedAt && (
-                                                <span>📅 {new Date(trait.unlockedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                                            )}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: '12px 0',
-                                        color: 'var(--color-text-secondary)'
-                                    }}>
-                                        <Lock size={20} style={{ marginBottom: '8px', opacity: 0.5 }} />
-                                        <div style={{ fontSize: '12px', fontWeight: 500 }}>Trait Undiscovered</div>
-                                        <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '4px' }}>
-                                            Continue verification to unlock
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        }
-                    >
-                        <button
-                            type="button"
-                            style={{
-                                aspectRatio: '1',
-                                width: '100%',
-                                borderRadius: '2px',
-                                transition: 'all 0.15s ease',
-                                cursor: 'pointer',
-                                border: trait.discovered ? 'none' : `1px solid ${DIMENSION_COLORS.undiscoveredStroke}`,
-                                backgroundColor: trait.discovered
-                                    ? (DIMENSION_COLORS[trait.displayDimension as keyof typeof DIMENSION_COLORS] || DIMENSION_COLORS.undiscoveredFill)
-                                    : DIMENSION_COLORS.undiscoveredFill,
-                                opacity: 1,
-                                padding: 0,
-                            }}
-                            aria-label={trait.name || `Trait ${trait.id}`}
-                            onMouseOver={(e) => {
-                                if (window.innerWidth >= 1024) {
-                                    e.currentTarget.style.transform = 'scale(1.3)';
-                                    e.currentTarget.style.zIndex = '10';
-                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.4)';
-                                }
-                            }}
-                            onMouseOut={(e) => {
-                                if (window.innerWidth >= 1024) {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                    e.currentTarget.style.zIndex = '1';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }
-                            }}
-                            onClick={() => {
-                                // On touch devices, trigger modal instead of tooltip
-                                if (isTouchDevice && onCellClick) {
-                                    onCellClick(trait);
-                                }
-                            }}
-                        />
-                    </Tooltip>
-                ))
-            }
-        </div >
-    );
-}
-
-
-// ============================================================
-// Progress Bar Component
-// ============================================================
-
-interface ProgressBarProps {
-    value: number;
-    color: string;
-}
-
-function ProgressBar({ value, color }: ProgressBarProps) {
-    return (
-        <div
-            style={{
-                width: '100%',
-                height: '6px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '3px',
-                overflow: 'hidden',
-            }}
-        >
-            <div
-                style={{
-                    height: '100%',
-                    width: `${value}%`,
-                    background: color, // Changed from backgroundColor to support gradients
-                    borderRadius: '3px',
-                    transition: 'width 0.3s ease',
-                }}
-            />
-        </div>
-    );
-}
+import { TwinMatrixGrid, ProgressBar, MatrixTooltip } from './components';
 
 // ============================================================
 // Main Twin Matrix Card Component
@@ -477,7 +100,7 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
                     >
                         Twin Matrix Growth
                     </h3>
-                    <Tooltip
+                    <MatrixTooltip
                         disabled={isTouchDevice}
                         content={
                             <div style={{ maxWidth: '200px', whiteSpace: 'normal', fontSize: '13px' }}>
@@ -504,7 +127,7 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
                         >
                             <Info size={14} color="var(--color-text-secondary)" />
                         </button>
-                    </Tooltip>
+                    </MatrixTooltip>
                 </div>
                 <p
                     style={{
@@ -559,7 +182,6 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
                         marginTop: '16px',
                     }}
                 >
-                    {/* Quadrant order: Physical (top-left), Digital (top-right), Social (bottom-left), Spiritual (bottom-right) */}
                     {(['physical', 'digital', 'social', 'spiritual'] as const).map((key) => {
                         const dim = data.dimensions[key];
                         const color = dimensionColors[key];
@@ -611,8 +233,8 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
                     <button
                         onClick={() => onExplore?.()}
                         style={{
-                            width: '100%', // 填满容器宽度
-                            padding: '12px 16px', // 稍微增加垂直 padding
+                            width: '100%',
+                            padding: '12px 16px',
                             borderRadius: '12px',
                             background: '#ffffff',
                             border: '1px solid transparent',

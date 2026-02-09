@@ -18,7 +18,7 @@ import { TwinMatrixCard } from '../twin-matrix/TwinMatrixCard';
 import {
     initialMatrixData,
     travelKOLMatrixData,
-} from '../human-verification/data/mockProfiles';
+} from '../../data/profiles';
 import type { TwinMatrixData } from '../twin-matrix/types';
 
 interface HumanVerificationProps {

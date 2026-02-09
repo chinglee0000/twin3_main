@@ -49,7 +49,11 @@
 .btn-ghost:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.2);
-    color: var(--color-text-primary);
+    color: #ffffff !important;
+}
+
+.sidebar-tab-active:hover {
+    color: #ffffff !important;
 }
 
 /* CARD STYLES */
