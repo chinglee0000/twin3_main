@@ -1,7 +1,7 @@
 /**
  * Matrix Tooltip Component
  * 
- * Portal-based tooltip with position tracking
+ * Portal-based tooltip with position tracking and boundary detection
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -16,8 +16,10 @@ interface MatrixTooltipProps {
 export function MatrixTooltip({ children, content, disabled }: MatrixTooltipProps) {
     const [open, setOpen] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [adjustedPosition, setAdjustedPosition] = useState({ x: 0, y: 0, placement: 'top' as 'top' | 'bottom' | 'left' | 'right' });
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const triggerRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
 
     const handleMouseEnter = () => {
         if (triggerRef.current) {
@@ -35,6 +37,44 @@ export function MatrixTooltip({ children, content, disabled }: MatrixTooltipProp
         setOpen(false);
     };
 
+    // Adjust tooltip position to stay within viewport
+    useEffect(() => {
+        if (open && tooltipRef.current) {
+            const tooltip = tooltipRef.current;
+            const tooltipRect = tooltip.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            
+            let finalX = position.x;
+            let finalY = position.y;
+            let placement: 'top' | 'bottom' | 'left' | 'right' = 'top';
+
+            // Check if tooltip overflows viewport
+            const tooltipWidth = tooltipRect.width;
+            const tooltipHeight = tooltipRect.height;
+
+            // Horizontal adjustment
+            if (finalX - tooltipWidth / 2 < 10) {
+                // Too close to left edge
+                finalX = tooltipWidth / 2 + 10;
+            } else if (finalX + tooltipWidth / 2 > viewportWidth - 10) {
+                // Too close to right edge
+                finalX = viewportWidth - tooltipWidth / 2 - 10;
+            }
+
+            // Vertical adjustment
+            if (finalY - tooltipHeight < 10) {
+                // Not enough space on top, show below
+                if (triggerRef.current) {
+                    const rect = triggerRef.current.getBoundingClientRect();
+                    finalY = rect.bottom + 8;
+                    placement = 'bottom';
+                }
+            }
+
+            setAdjustedPosition({ x: finalX, y: finalY, placement });
+        }
+    }, [open, position]);
+
     useEffect(() => {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -43,12 +83,15 @@ export function MatrixTooltip({ children, content, disabled }: MatrixTooltipProp
 
     const tooltipContent = open ? createPortal(
         <div
+            ref={tooltipRef}
             role="tooltip"
             style={{
                 position: 'fixed',
-                top: position.y,
-                left: position.x,
-                transform: 'translate(-50%, -100%)',
+                top: adjustedPosition.y,
+                left: adjustedPosition.x,
+                transform: adjustedPosition.placement === 'top' 
+                    ? 'translate(-50%, -100%)' 
+                    : 'translate(-50%, 0)',
                 zIndex: 99999,
                 background: 'rgba(28, 28, 30, 0.95)',
                 backdropFilter: 'blur(20px)',
@@ -62,7 +105,9 @@ export function MatrixTooltip({ children, content, disabled }: MatrixTooltipProp
                 whiteSpace: 'normal',
                 animation: 'fade-in 0.15s ease-out',
                 pointerEvents: 'none',
-                maxWidth: '280px',
+                maxWidth: '340px',
+                width: 'auto',
+                minWidth: '240px',
             }}
         >
             {content}

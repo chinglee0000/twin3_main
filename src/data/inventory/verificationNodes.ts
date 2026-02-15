@@ -39,7 +39,7 @@ export const verificationNodes: InteractionNode[] = [
         id: 'verification_success',
         triggers: ['verified', 'success'],
         response: {
-            text: "Verification Recorded.\n\nYour humanity score has been updated. You can continue adding verification methods to boost your score.",
+            text: "**Verification Complete** — You are now a Verified Human.\n\nYour Twin Matrix is being initialized...",
             delay: 500,
             widget: 'twin_matrix'
         },

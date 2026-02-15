@@ -4,8 +4,6 @@
  * Simple animated progress bar
  */
 
-import React from 'react';
-
 interface ProgressBarProps {
     value: number;
     color: string;

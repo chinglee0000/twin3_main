@@ -18,7 +18,7 @@ export const CONTENT_REGISTRY: Record<ContextId, ContextContent> = {
         heroTitle: 'Own Your Humanity with twin3',
         heroSubtitle: 'Transform your human warmth into a 256D Twin Matrix. Let your Personal Agent work and earn for you while you focus on living.',
         videoUrl: '/videos/intro.mp4',
-        ctaText: 'Mint Free SBT',
+        ctaText: 'Prove Humanity to Claim',
         aiPromptContext: 'User is new and arrived organically. Introduce the platform, explain Twin Matrix and SBT concepts. Be welcoming and educational.',
     },
 

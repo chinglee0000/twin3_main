@@ -10,20 +10,23 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowRight, Info, X } from 'lucide-react';
-import type { TwinMatrixData, MatrixTrait } from './types';
+import type { MatrixTrait } from './types';
 import { TwinMatrixModal } from './TwinMatrixModal';
 import { TwinMatrixGrid, ProgressBar, MatrixTooltip } from './components';
+import { useMatrixData } from '../../store/appStore';
 
 // ============================================================
 // Main Twin Matrix Card Component
 // ============================================================
 
 interface TwinMatrixCardProps {
-    data: TwinMatrixData;
     onExplore?: () => void;
 }
 
-export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore }) => {
+export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ onExplore }) => {
+    // Use global matrix data from store
+    const data = useMatrixData();
+    
     const [selectedTrait, setSelectedTrait] = useState<MatrixTrait | null>(null);
     const [showInfoModal, setShowInfoModal] = useState(false);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
@@ -73,7 +76,7 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
 
     return (
         <div
-            className="card animate-fade-in-scale"
+            className="card"
             style={{
                 width: '100%',
                 maxWidth: '480px',
@@ -186,8 +189,10 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
                         const dim = data.dimensions[key];
                         const color = dimensionColors[key];
                         const label = key.charAt(0).toUpperCase() + key.slice(1);
-                        const percentage = Math.round((dim.discovered / dim.total) * 100);
-                        const score255 = Math.round((dim.discovered / dim.total) * 255);
+                        
+                        // Use the percentage from dimensions data (calculated based on trait strengths)
+                        const percentage = dim.percentage;
+                        const score255 = Math.round((percentage / 100) * 255);
 
                         return (
                             <div key={key}>
@@ -259,7 +264,7 @@ export const TwinMatrixCard: React.FC<TwinMatrixCardProps> = ({ data, onExplore 
                             e.currentTarget.style.border = '1px solid transparent';
                         }}
                     >
-                        Explore My Matrix
+                        Boost Your Score
                         <ArrowRight size={16} />
                     </button>
                 </div>

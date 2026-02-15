@@ -1,26 +1,31 @@
+/**
+ * MatrixView - Twin Matrix full page tab view
+ */
+
 import React from 'react';
 import { TwinMatrixCard } from '../../twin-matrix/TwinMatrixCard';
-import { web3EngineerMatrixData } from '../../../data/matrix/twinMatrixMockData';
 
 export const MatrixView: React.FC = () => {
     return (
-        <div className="matrix-view animate-fade-in scrollbar-hide" style={{
-            padding: '24px',
-            overflow: 'auto',
-            height: '100%',
-            animation: 'fadeIn 0.3s ease-in-out'
+        <div style={{
+            maxWidth: '900px',
+            margin: '0 auto',
+            padding: '24px 0'
         }}>
-            <div style={{
-                maxWidth: '1200px',
-                margin: '0 auto'
+            <h2 style={{
+                fontSize: '24px',
+                fontWeight: 600,
+                color: 'var(--color-text-primary)',
+                marginBottom: '24px',
+                letterSpacing: '-0.02em'
             }}>
-                <TwinMatrixCard
-                    data={web3EngineerMatrixData}
-                    onExplore={() => {
-                        console.log('Explore Twin Matrix');
-                    }}
-                />
-            </div>
+                Twin Matrix
+            </h2>
+            <TwinMatrixCard
+                onExplore={() => {
+                    // Placeholder for explore action
+                }}
+            />
         </div>
     );
 };

@@ -264,7 +264,7 @@ export const VerificationLoader: React.FC<VerificationLoaderProps> = ({
                         <span style={{ color: 'var(--color-text-dim)' }}>Session ID</span>
                         <span style={{
                             color: 'var(--color-text-primary)',
-                            fontFamily: 'monospace',
+                            fontFamily: 'var(--font-sans)',
                             fontSize: '11px',
                         }}>{sessionId}</span>
                     </div>

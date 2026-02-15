@@ -3,7 +3,6 @@ import { Coins, Clock, Users } from 'lucide-react';
 import { ResponsiveModal } from '../../../components/ui/ResponsiveModal';
 import { TwinMatrixCard } from '../../twin-matrix/TwinMatrixCard';
 import { GlobalDashboardWidget } from '../../widgets';
-import { web3EngineerMatrixData } from '../../../data/matrix/twinMatrixMockData';
 import type { TaskOpportunityPayload } from '../../../types';
 
 interface ModalContainerProps {
@@ -58,7 +57,7 @@ export const ModalContainer: React.FC<ModalContainerProps> = ({
                 title="Your Twin Matrix"
             >
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '-20px' }}>
-                    <TwinMatrixCard data={web3EngineerMatrixData} />
+                    <TwinMatrixCard />
                 </div>
             </ResponsiveModal>
 

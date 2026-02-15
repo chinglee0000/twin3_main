@@ -73,7 +73,7 @@ export const DevConsole: React.FC<DevConsoleProps> = ({ isOpen, onClose }) => {
             border: '1px solid rgba(48, 209, 88, 0.3)',
             boxShadow: '0 0 20px rgba(48, 209, 88, 0.1)',
             zIndex: 9999,
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-sans)',
             fontSize: '11px',
             overflow: 'hidden',
             transition: 'all 0.2s ease'

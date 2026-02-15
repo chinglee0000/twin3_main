@@ -8,13 +8,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Lock, Calendar, Unlock } from 'lucide-react';
 import type { MatrixTrait } from './types';
-
-const DIMENSION_COLORS = {
-    physical: '#D02800',
-    social: '#FFBA08',
-    digital: '#3F88C5',
-    spiritual: '#1A9E8F',
-};
+import { getTraitColor, type MatrixDimension } from './colorSystem';
 
 interface TwinMatrixModalProps {
     trait: MatrixTrait | null;
@@ -43,7 +37,7 @@ export const TwinMatrixModal: React.FC<TwinMatrixModalProps> = ({ trait, onClose
 
     if (!trait) return null;
 
-    const dimensionColor = DIMENSION_COLORS[trait.dimension as keyof typeof DIMENSION_COLORS] || '#fff';
+    const dimensionColor = getTraitColor(trait.dimension as MatrixDimension, trait.strength || 0);
     const strengthPercent = trait.strength ? Math.round((trait.strength / 255) * 100) : 0;
 
     return createPortal(
@@ -137,7 +131,7 @@ export const TwinMatrixModal: React.FC<TwinMatrixModalProps> = ({ trait, onClose
                                     <span style={{
                                         fontSize: '12px',
                                         color: 'var(--color-text-dim, #6B7280)',
-                                        fontFamily: 'monospace',
+                                        fontFamily: 'var(--font-sans)',
                                     }}>
                                         ID: 0x{trait.id}
                                     </span>
@@ -169,23 +163,34 @@ export const TwinMatrixModal: React.FC<TwinMatrixModalProps> = ({ trait, onClose
                                 color: 'var(--color-text-secondary, #9CA3AF)',
                             }}>
                                 <span>Strength</span>
-                                <span style={{ color: 'var(--color-text-primary, #fff)', fontWeight: 600 }}>
-                                    {strengthPercent}%
+                                <span style={{ color: 'var(--color-text-dim, #6B7280)', fontSize: '12px' }}>
+                                    {trait.strength || 0}/255
                                 </span>
                             </div>
-                            <div style={{
-                                width: '100%',
-                                height: '6px',
-                                background: 'rgba(255, 255, 255, 0.1)',
-                                borderRadius: '3px',
-                                overflow: 'hidden',
-                            }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <div style={{
-                                    width: `${strengthPercent}%`,
-                                    height: '100%',
-                                    background: dimensionColor,
-                                    transition: 'width 0.3s ease',
-                                }} />
+                                    flex: 1,
+                                    height: '6px',
+                                    background: 'rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '3px',
+                                    overflow: 'hidden',
+                                }}>
+                                    <div style={{
+                                        width: `${strengthPercent}%`,
+                                        height: '100%',
+                                        background: dimensionColor,
+                                        transition: 'width 0.3s ease',
+                                    }} />
+                                </div>
+                                <span style={{
+                                    color: 'var(--color-text-primary, #fff)',
+                                    fontWeight: 600,
+                                    fontSize: '13px',
+                                    minWidth: '40px',
+                                    textAlign: 'right'
+                                }}>
+                                    {strengthPercent}%
+                                </span>
                             </div>
                         </div>
 
@@ -251,7 +256,7 @@ export const TwinMatrixModal: React.FC<TwinMatrixModalProps> = ({ trait, onClose
                         <p style={{
                             fontSize: '12px',
                             color: 'var(--color-text-dim, #6B7280)',
-                            fontFamily: 'monospace',
+                            fontFamily: 'var(--font-sans)',
                             marginBottom: '12px',
                         }}>
                             ID: 0x{trait.id}

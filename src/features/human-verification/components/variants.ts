@@ -2,6 +2,7 @@ export const WIDGET_STATES = {
     INITIAL: 'initial',
     SELECTING: 'selecting_method',
     VERIFYING: 'verifying',
+    WIDGET_FAILED: 'widget_failed',
     COMPLETE: 'verification_complete',
     MATRIX_VIEW: 'matrix_view',
     SIMULATE_KOL: 'simulate_kol',

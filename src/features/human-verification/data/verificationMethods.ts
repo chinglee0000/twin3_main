@@ -1,68 +1,29 @@
 import type { VerificationMethod } from '../components/types';
 
 /**
- * Verification Methods Configuration
- * Based on humanityIndexBoost.md specification
+ * Verification Methods Configuration - POC Version
  * 
- * Weight represents the contribution to Humanity Index (0-255)
- * Formula: Humanity Index = Σ(weight_i × completion_i) × 255
+ * For POC, we only have 2 verification methods:
+ * 1. Google reCAPTCHA v3 = 0.5 score
+ * 2. iOS/Android Biometric = 0.5 score
  * 
- * Note: recaptcha-v2 removed per user request
+ * Total possible score = 1.0 (when both completed)
+ * 
+ * Weight represents the contribution to Humanity Index (0-1 scale)
+ * Formula: Humanity Index = Σ(weight_i) × 255
  */
 export const verificationMethods: VerificationMethod[] = [
     {
         id: 'recaptcha-v3',
         name: 'Google reCAPTCHA v3',
         icon: 'ShieldCheck',
-        weight: 0.20
+        weight: 0.5  // 0.5 score when completed
     },
     {
-        id: 'sms-verification',
-        name: 'SMS Verification',
-        icon: 'Smartphone',
-        weight: 0.25
-    },
-    {
-        id: 'biometric-liveness',
-        name: 'Liveness Detection',
-        icon: 'UserCheck',
-        weight: 0.40
-    },
-    {
-        id: 'social-auth',
-        name: 'Social Identity Link',
-        icon: 'Users',
-        weight: 0.18
-    },
-    {
-        id: 'wallet-signature',
-        name: 'Web3 Wallet Signature',
-        icon: 'Wallet',
-        weight: 0.22
-    },
-    {
-        id: 'poh-sbt',
-        name: 'Proof of Humanity',
-        icon: 'Award',
-        weight: 0.35
-    },
-    {
-        id: 'image-puzzle',
-        name: 'Visual Puzzle',
-        icon: 'Puzzle',
-        weight: 0.12
-    },
-    {
-        id: 'behavioral-biometrics',
-        name: 'Behavioral Analysis',
+        id: 'biometric-auth',
+        name: 'iOS/Android Biometric',
         icon: 'Fingerprint',
-        weight: 0.16
-    },
-    {
-        id: 'hardware-key',
-        name: 'Hardware Security Key',
-        icon: 'Key',
-        weight: 0.28
+        weight: 0.5  // 0.5 score when completed
     }
 ];
 
@@ -88,3 +49,4 @@ export function calculateHumanityIndex(completedMethodIds: string[]): number {
  * Default completed methods for POC demo
  */
 export const defaultCompletedMethods: string[] = [];
+

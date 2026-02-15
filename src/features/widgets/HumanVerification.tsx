@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Shield } from 'lucide-react';
+import { Shield, AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 
 // Import from HumanVerification module
 import {
@@ -15,11 +15,17 @@ import { VerificationLoader } from '../human-verification/components/Verificatio
 
 // Import TwinMatrixCard (16x16 grid)
 import { TwinMatrixCard } from '../twin-matrix/TwinMatrixCard';
-import {
-    initialMatrixData,
-    travelKOLMatrixData,
-} from '../../data/profiles';
 import type { TwinMatrixData } from '../twin-matrix/types';
+
+// Import global store
+import { useAppStore } from '../../store/appStore';
+
+// Import Humanity Index calculator
+import { 
+    calculateHumanityIndex, 
+    calculateHumanVerificationScore,
+    humanityIndexToPercentage 
+} from '../../services/humanityIndexCalculator';
 
 interface HumanVerificationProps {
     onClose?: () => void;
@@ -32,13 +38,17 @@ export const HumanVerification: React.FC<HumanVerificationProps> = ({
     onComplete,
     initialScore = 0,
 }) => {
+    // Get global store actions and current matrix data
+    const currentMatrixData = useAppStore((state) => state.matrixData);
+    const updateMatrixData = useAppStore((state) => state.updateMatrixData);
+    const setHumanityScore = useAppStore((state) => state.setHumanityScore);
+    
     // Start directly at method selection - no need to ask again
     const [flowState, setFlowState] = useState<FlowState>(WIDGET_STATES.SELECTING);
     const [score, setScore] = useState(initialScore);
     const [displayScore, setDisplayScore] = useState(initialScore);
     const [completedMethods, setCompletedMethods] = useState<string[]>([]);
     const [selectedMethod, setSelectedMethod] = useState<VerificationMethod | null>(null);
-    const [matrixData, setMatrixData] = useState<TwinMatrixData>(initialMatrixData);
 
     // Animate score changes
     useEffect(() => {
@@ -82,46 +92,91 @@ export const HumanVerification: React.FC<HumanVerificationProps> = ({
     const handleVerificationComplete = useCallback(() => {
         if (!selectedMethod) return;
 
+        // 20% chance of failure for POC demo
+        const shouldFail = Math.random() < 0.2;
+        if (shouldFail) {
+            setFlowState(WIDGET_STATES.WIDGET_FAILED);
+            return;
+        }
+
         // Add to completed methods
         const newCompletedMethods = [...completedMethods, selectedMethod.id];
         setCompletedMethods(newCompletedMethods);
 
         // Calculate new score based on completed weights
-        // Formula: score = Σ(weight_i) × 255
-        const totalWeight = newCompletedMethods.reduce((sum, id) => {
+        // Step 1: Calculate Human Verification completion ratio (0-1.0)
+        const humanVerificationRatio = newCompletedMethods.reduce((sum, id) => {
             const method = verificationMethods.find(m => m.id === id);
             return sum + (method?.weight || 0);
         }, 0);
-        const newScore = Math.round(Math.min(totalWeight, 1.0) * 255);
-        setScore(newScore);
 
-        // Update matrix data with new score
-        const updatedMatrixData = {
-            ...initialMatrixData,
-            humanityIndex: newScore,
-            avgStrength: Math.round((newScore / 255) * 100),
+        // Step 2: Calculate Humanity Index using the new formula
+        const newHumanityIndex = calculateHumanityIndex({
+            humanVerification: humanVerificationRatio,
+            // Other dimensions will be added in the future
+            taskCompletion: 0,
+            socialBinding: 0,
+            walletBinding: 0,
+            communityEngagement: 0,
+        });
+
+        // Step 3: Calculate dimension percentage based on total possible strength
+        // Physical dimension has 64 traits, each can have max strength of 255
+        // Percentage = (sum of all trait strengths / (64 × 255)) × 100
+        const physicalMaxStrength = 64 * 255; // 16,320
+        const physicalCurrentStrength = newHumanityIndex; // Only Humanity Index trait has strength
+        const physicalPercentage = Math.round((physicalCurrentStrength / physicalMaxStrength) * 100);
+
+        setScore(newHumanityIndex);
+
+        // Update global store with new matrix data
+        const updatedMatrixData: TwinMatrixData = {
+            ...currentMatrixData,
+            humanityIndex: newHumanityIndex,
+            avgStrength: humanityIndexToPercentage(newHumanityIndex),
+            journeyProgress: Math.round((currentMatrixData.discoveredTraits / currentMatrixData.totalTraits) * 100),
             dimensions: {
-                ...initialMatrixData.dimensions,
+                ...currentMatrixData.dimensions,
                 physical: {
-                    ...initialMatrixData.dimensions.physical,
-                    percentage: Math.round((newScore / 255) * 100),
-                    discovered: Math.max(initialMatrixData.dimensions.physical.discovered, newScore > 0 ? 1 : 0)
+                    ...currentMatrixData.dimensions.physical,
+                    percentage: physicalPercentage,
+                    discovered: Math.max(currentMatrixData.dimensions.physical.discovered, newHumanityIndex > 0 ? 1 : 0)
                 }
             },
-            traits: initialMatrixData.traits.map(trait =>
-                trait.id === '00' ? { ...trait, strength: newScore, discovered: true } : trait
+            traits: currentMatrixData.traits.map(trait =>
+                trait.id === '00' ? { 
+                    ...trait,
+                    name: 'Humanity Index',
+                    description: 'Measures the authenticity and trustworthiness of user identity, indicating whether the user is a real human rather than a bot or fake identity.',
+                    unlockedBy: 'Google reCAPTCHA v3',
+                    strength: newHumanityIndex, // Use total Humanity Index for the trait strength
+                    discovered: true,
+                    unlockedAt: new Date().toISOString() // Set current timestamp for animation
+                } : trait
             )
         };
-        setMatrixData(updatedMatrixData);
+        
+        // Update global state
+        updateMatrixData(updatedMatrixData);
+        setHumanityScore(newHumanityIndex);
 
         // Return to options list (user can do more verifications)
-        // 移除自動文字回覆，直接返回選擇頁面
         setTimeout(() => {
             setFlowState(WIDGET_STATES.SELECTING);
             setSelectedMethod(null);
-            onComplete?.(newScore);
+            onComplete?.(newHumanityIndex);
         }, ANIMATION_DURATION.FADE_IN);
-    }, [selectedMethod, completedMethods, onComplete]);
+    }, [selectedMethod, completedMethods, onComplete, updateMatrixData, setHumanityScore, currentMatrixData]);
+
+    // Failure handlers
+    const handleRetryVerification = useCallback(() => {
+        setFlowState(WIDGET_STATES.VERIFYING);
+    }, []);
+
+    const handlePickAnother = useCallback(() => {
+        setSelectedMethod(null);
+        setFlowState(WIDGET_STATES.SELECTING);
+    }, []);
 
     const handleViewMatrix = useCallback(() => {
         setFlowState(WIDGET_STATES.MATRIX_VIEW);
@@ -140,12 +195,13 @@ export const HumanVerification: React.FC<HumanVerificationProps> = ({
     }, []);
 
     const handleSimulateKOL = useCallback(() => {
-        setMatrixData(travelKOLMatrixData);
+        // For POC demo: simulate KOL matrix (not implemented in global store yet)
+        // This feature can be added later if needed
         setFlowState(WIDGET_STATES.SIMULATE_KOL);
     }, []);
 
     const handleBackToMyMatrix = useCallback(() => {
-        setMatrixData(initialMatrixData);
+        // Return to user's own matrix view
         setFlowState(WIDGET_STATES.MATRIX_VIEW);
     }, []);
 
@@ -199,7 +255,7 @@ export const HumanVerification: React.FC<HumanVerificationProps> = ({
                     borderRadius: '4px',
                     fontSize: '11px',
                     fontWeight: 700,
-                    fontFamily: 'monospace',
+                    fontFamily: 'var(--font-sans)',
                     color: '#ffffff',
                 }}>
                     SCORE: {Math.round(displayScore)}
@@ -344,6 +400,93 @@ export const HumanVerification: React.FC<HumanVerificationProps> = ({
         );
     }
 
+    // Widget failed state
+    if (flowState === WIDGET_STATES.WIDGET_FAILED) {
+        return (
+            <div className="card animate-fade-in" style={cardStyle}>
+                <div style={{
+                    padding: '16px 20px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                    background: 'linear-gradient(135deg, rgba(80, 30, 20, 0.5), rgba(60, 20, 15, 0.5))',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <AlertTriangle size={20} color="#f59e0b" />
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#f59e0b' }}>
+                            Verification Failed
+                        </span>
+                    </div>
+                    <p style={{
+                        fontSize: '13px',
+                        color: 'var(--color-text-secondary)',
+                        marginTop: '8px',
+                        lineHeight: 1.5,
+                    }}>
+                        {selectedMethod?.name || 'Verification'} could not be completed. This can happen due to network issues or service unavailability.
+                    </p>
+                </div>
+
+                <div style={{
+                    padding: '16px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                }}>
+                    <button
+                        onClick={handleRetryVerification}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            padding: '12px 16px',
+                            borderRadius: '12px',
+                            background: '#ffffff',
+                            border: '1px solid transparent',
+                            color: '#000000',
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,255,255,0.1)';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        <RefreshCw size={16} />
+                        Try Again
+                    </button>
+
+                    <button
+                        onClick={handlePickAnother}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            padding: '12px 16px',
+                            borderRadius: '12px',
+                            background: 'transparent',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            color: 'var(--color-text-secondary)',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <ArrowLeft size={16} />
+                        Pick Another Method
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     // Matrix view state - Using 16x16 TwinMatrixCard (appears below verification card)
     if (flowState === WIDGET_STATES.MATRIX_VIEW) {
         return (
@@ -423,7 +566,6 @@ export const HumanVerification: React.FC<HumanVerificationProps> = ({
                 {/* Twin Matrix Card 接著出現 - 給它完整寬度 */}
                 <div data-twin-matrix style={{ width: '100%' }}>
                     <TwinMatrixCard
-                        data={matrixData}
                         onExplore={handleSimulateKOL} // 直接跳轉到 KOL 模擬
                     />
                 </div>
@@ -447,7 +589,6 @@ export const HumanVerification: React.FC<HumanVerificationProps> = ({
 
                 {/* KOL's Twin Matrix - 16x16 grid with multiple traits */}
                 <TwinMatrixCard
-                    data={matrixData}
                     onExplore={handleBackToMyMatrix} // KOL 狀態下點擊返回自己的 Matrix
                 />
             </div>

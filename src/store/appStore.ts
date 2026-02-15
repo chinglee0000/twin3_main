@@ -1,8 +1,8 @@
 /**
  * App Context Store (Zustand)
  * 
- * Global state container for context-aware routing
- * Provides state and actions for managing user context
+ * Global state container for context-aware routing and Twin Matrix state
+ * Provides state and actions for managing user context and matrix data
  */
 
 import { create } from 'zustand';
@@ -14,12 +14,18 @@ import type {
     UserStatus,
     URLContext
 } from '../types/context';
+import type { TwinMatrixData } from '../features/twin-matrix/types';
+import { emptyMatrixData } from '../data/matrix/twinMatrixMockData';
 
 interface AppStore extends AppContext {
+    // Twin Matrix State
+    matrixData: TwinMatrixData;
+    
     // Actions
     setUrlParams: (params: URLContext) => void;
     setUserStatus: (status: UserStatus, walletAddress?: string) => void;
     setHumanityScore: (score: number) => void;
+    updateMatrixData: (data: TwinMatrixData) => void;
     resolveContext: () => ContextId;
     completeStep: (stepId: string) => void;
     setCurrentStep: (stepId: string) => void;
@@ -40,6 +46,7 @@ export const useAppStore = create<AppStore>()(
         persist(
             (set, get) => ({
                 ...initialState,
+                matrixData: emptyMatrixData, // Start with empty matrix
 
                 // Set URL parameters and detect entry source
                 setUrlParams: (params: URLContext) => {
@@ -69,6 +76,11 @@ export const useAppStore = create<AppStore>()(
                 // Set humanity score after verification
                 setHumanityScore: (score: number) => {
                     set({ humanityScore: score });
+                },
+
+                // Update Twin Matrix data
+                updateMatrixData: (data: TwinMatrixData) => {
+                    set({ matrixData: data });
                 },
 
                 // Resolve context based on current state
@@ -117,16 +129,17 @@ export const useAppStore = create<AppStore>()(
 
                 // Reset store to initial state
                 reset: () => {
-                    set(initialState);
+                    set({ ...initialState, matrixData: emptyMatrixData });
                 },
             }),
             {
-                name: 'twin3-context',
+                name: 'twin3-context-v3', // Changed version to force refresh with empty matrix
                 partialize: (state) => ({
                     userStatus: state.userStatus,
                     walletAddress: state.walletAddress,
                     humanityScore: state.humanityScore,
                     completedSteps: state.completedSteps,
+                    matrixData: state.matrixData,
                 }),
             }
         ),
@@ -141,3 +154,5 @@ export const useUrlParams = () => useAppStore((state) => state.urlParams);
 export const useIsVerified = () => useAppStore((state) =>
     state.userStatus !== 'anonymous'
 );
+export const useMatrixData = () => useAppStore((state) => state.matrixData);
+export const useUpdateMatrixData = () => useAppStore((state) => state.updateMatrixData);

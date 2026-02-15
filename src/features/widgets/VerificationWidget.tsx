@@ -107,7 +107,7 @@ export const VerificationWidget: React.FC<VerificationWidgetProps> = ({
                             fontSize: '15px',
                             fontWeight: 600,
                             color: 'var(--color-text-primary)',
-                            fontFamily: 'monospace'
+                            fontFamily: 'var(--font-sans)'
                         }}>
                             {code}
                         </code>

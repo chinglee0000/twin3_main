@@ -29,6 +29,7 @@ export const SidebarNavButton: React.FC<SidebarNavButtonProps> = ({
                 gap: '12px',
                 padding: isCollapsed ? '0' : '12px',
                 background: isActive ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
                 border: 'none',
                 borderRadius: 'var(--radius-md)',
                 cursor: 'pointer',

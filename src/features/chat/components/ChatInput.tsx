@@ -17,6 +17,7 @@ interface ChatInputProps {
     onSubmit: () => void;
     onKeyDown: (e: React.KeyboardEvent) => void;
     onSuggestionClick: (payload: string) => void;
+    disabled?: boolean;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -28,16 +29,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onSubmit,
     onKeyDown,
     onSuggestionClick,
+    disabled = false,
 }) => {
     return (
         <div style={{
             padding: '16px',
             borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-            flexShrink: 0
+            flexShrink: 0,
+            opacity: disabled ? 0.6 : 1,
+            pointerEvents: disabled ? 'none' : 'auto',
+            transition: 'opacity 0.2s'
         }}>
             <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                 {/* Suggestions */}
-                {suggestions.length > 0 && (
+                {suggestions.length > 0 && !disabled && (
                     <div style={{
                         display: 'flex',
                         flexWrap: 'wrap',
@@ -79,13 +84,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         ref={inputRef}
                         value={inputValue}
                         onChange={(e) => {
+                            if (disabled) return;
                             onInputChange(e.target.value);
                             e.target.style.height = 'auto';
                             e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                         }}
                         onKeyDown={onKeyDown}
-                        placeholder="Message twin3..."
+                        placeholder={disabled ? "Please complete verification above..." : "Message twin3..."}
                         rows={1}
+                        readOnly={disabled}
                         style={{
                             flex: 1,
                             background: 'transparent',
@@ -96,12 +103,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             outline: 'none',
                             maxHeight: '120px',
                             lineHeight: '1.5',
-                            padding: '4px 0'
+                            padding: '4px 0',
+                            cursor: disabled ? 'not-allowed' : 'text'
                         }}
                     />
                     <button
                         onClick={onSubmit}
-                        disabled={isTyping || !inputValue.trim()}
+                        disabled={isTyping || !inputValue.trim() || disabled}
                         className="btn btn-primary"
                         style={{
                             padding: '10px 14px',
@@ -109,8 +117,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            opacity: isTyping || !inputValue.trim() ? 0.5 : 1,
-                            transition: 'all 0.2s'
+                            opacity: isTyping || !inputValue.trim() || disabled ? 0.5 : 1,
+                            transition: 'all 0.2s',
+                            cursor: disabled ? 'not-allowed' : 'pointer'
                         }}
                     >
                         <Send size={18} />

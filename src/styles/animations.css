@@ -26,6 +26,72 @@
     }
 }
 
+/* Slide down animation for expanding sections */
+@keyframes slide-down {
+    from {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+    }
+
+    to {
+        opacity: 1;
+        max-height: 500px;
+        overflow: visible;
+    }
+}
+
+/* Spring grow animation with glow effect for Twin Matrix Card */
+@keyframes spring-grow-glow {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+        box-shadow: 0 0 0 rgba(208, 40, 0, 0),
+                    0 0 0 rgba(63, 136, 197, 0),
+                    0 0 0 rgba(255, 186, 8, 0),
+                    0 0 0 rgba(26, 158, 143, 0);
+    }
+    
+    /* Grow phase: 0 -> 1.1 (overshoot) */
+    40% {
+        opacity: 1;
+        transform: scale(1.1);
+        box-shadow: 0 0 0 rgba(208, 40, 0, 0),
+                    0 0 0 rgba(63, 136, 197, 0),
+                    0 0 0 rgba(255, 186, 8, 0),
+                    0 0 0 rgba(26, 158, 143, 0);
+    }
+    
+    /* Settle phase: 1.1 -> 1 */
+    50% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(208, 40, 0, 0),
+                    0 0 0 rgba(63, 136, 197, 0),
+                    0 0 0 rgba(255, 186, 8, 0),
+                    0 0 0 rgba(26, 158, 143, 0);
+    }
+    
+    /* Glow starts: multi-color glow appears */
+    60% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(208, 40, 0, 0.4),
+                    0 0 20px rgba(63, 136, 197, 0.4),
+                    0 0 20px rgba(255, 186, 8, 0.4),
+                    0 0 20px rgba(26, 158, 143, 0.4);
+    }
+    
+    /* Glow fades out */
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(208, 40, 0, 0),
+                    0 0 0 rgba(63, 136, 197, 0),
+                    0 0 0 rgba(255, 186, 8, 0),
+                    0 0 0 rgba(26, 158, 143, 0);
+    }
+}
+
 @keyframes pulse-glow {
 
     0%,
@@ -50,18 +116,6 @@
     }
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 /* Animation Classes */
 .animate-fade-in {
     animation: fade-in 0.3s ease-out;
@@ -71,10 +125,126 @@
     animation: fade-in-scale 0.25s ease-out;
 }
 
+.animate-slide-down {
+    animation: slide-down 0.3s ease-out forwards;
+}
+
+.animate-spring-grow-glow {
+    animation: spring-grow-glow 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
 .animate-pulse-glow {
     animation: pulse-glow 2s infinite;
 }
 
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(300px) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+.animate-confetti {
+    animation: confetti-fall 2s ease-out forwards;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1.5s linear infinite;
+}
+
 .animate-bounce {
-    animation: bounce 1s infinite;
+    animation: bounce 0.8s ease-in-out infinite;
+}
+
+/* Pulse ring animation for wallet connection */
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.15;
+    }
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* Sliding animation for connection line */
+@keyframes slide-right {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(300%);
+    }
+}
+
+/* Glow pulse for wallet icon */
+@keyframes glow-pulse {
+    0%, 100% {
+        box-shadow: 0 8px 32px rgba(246, 133, 27, 0.4);
+    }
+    50% {
+        box-shadow: 0 8px 48px rgba(246, 133, 27, 0.6);
+    }
+}
+
+/* Matrix Cell - Default transition for hover effects */
+.matrix-cell {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Trait Unlock Animation - Spring grow with glow effect */
+@keyframes trait-unlock {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+    
+    /* Grow phase: 0 -> 1.15 (overshoot) */
+    40% {
+        opacity: 1;
+        transform: scale(1.15);
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+    
+    /* Settle phase: 1.15 -> 1 */
+    50% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+    
+    /* Glow starts after settling */
+    60% {
+        transform: scale(1);
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    }
+    
+    /* Glow fades out */
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+.animate-trait-unlock {
+    animation: trait-unlock 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+    z-index: 20 !important;
+    position: relative !important;
+    transition: none !important;
 }

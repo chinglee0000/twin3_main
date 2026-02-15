@@ -317,3 +317,107 @@ export const travelKOLMatrixData: TwinMatrixData = {
 
 // Re-export for backward compatibility
 export const web3EngineerMatrixData = travelKOLMatrixData;
+
+/**
+ * Generate completely empty "Just Born" Matrix (No traits unlocked)
+ */
+function generateEmptyTraits(): MatrixTrait[] {
+    const traits: MatrixTrait[] = [];
+
+    for (let i = 0; i < 256; i++) {
+        const hexId = i.toString(16).toUpperCase().padStart(2, '0');
+        const dimension = getDimensionFromHexId(hexId);
+        const row = Math.floor(i / 16);
+        const col = i % 16;
+
+        traits.push({
+            id: hexId,
+            dimension,
+            discovered: false,
+            strength: undefined,
+            position: { row, col },
+            name: undefined,
+            description: undefined,
+            unlockedBy: undefined,
+            unlockedAt: undefined,
+        });
+    }
+
+    return traits;
+}
+
+export const emptyMatrixData: TwinMatrixData = {
+    totalTraits: 256,
+    discoveredTraits: 0,
+    journeyProgress: 0,
+    avgStrength: 0,
+    humanityIndex: 0,
+
+    dimensions: {
+        physical: { 
+            discovered: 0, 
+            total: 64, 
+            percentage: 0
+        },
+        social: { discovered: 0, total: 64, percentage: 0 },
+        digital: { discovered: 0, total: 64, percentage: 0 },
+        spiritual: { discovered: 0, total: 64, percentage: 0 },
+    },
+
+    traits: generateEmptyTraits(),
+    recentlyUnlockedTrait: undefined,
+};
+
+/**
+ * Generate Initial "Just Born" Matrix (Only Humanity Index)
+ */
+function generateInitialTraits(): MatrixTrait[] {
+    const traits: MatrixTrait[] = [];
+
+    for (let i = 0; i < 256; i++) {
+        const hexId = i.toString(16).toUpperCase().padStart(2, '0');
+        const dimension = getDimensionFromHexId(hexId);
+        const row = Math.floor(i / 16);
+        const col = i % 16;
+
+        // Only unlock ID '00' (Humanity Index)
+        const isHumanityIndex = hexId === '00';
+        const traitData = isHumanityIndex ? kolTraitValues['00'] : undefined;
+
+        traits.push({
+            id: hexId,
+            dimension,
+            discovered: isHumanityIndex,
+            strength: isHumanityIndex ? 38 : undefined, // Total Humanity Index = 38
+            position: { row, col },
+            name: traitData?.name,
+            description: traitData?.description,
+            unlockedBy: traitData?.unlockedBy,
+            unlockedAt: isHumanityIndex ? new Date(Date.now() - 60000).toISOString() : undefined, // Set to 1 minute ago to avoid animation on page load
+        });
+    }
+
+    return traits;
+}
+
+export const initialMatrixData: TwinMatrixData = {
+    totalTraits: 256,
+    discoveredTraits: 1,
+    journeyProgress: 0.5, // 1/256 ≈ 0.4%, rounded to user preference
+    avgStrength: 15, // 38/255 * 100 ≈ 15%
+    humanityIndex: 38, // 0.5 verification × 76.5 (30% of 255) = 38.25 ≈ 38
+
+    dimensions: {
+        physical: { 
+            discovered: 1, 
+            total: 64, 
+            percentage: 0 // 38 / (64 × 255) × 100 = 38/16320 × 100 = 0.23% ≈ 0%
+        },
+        social: { discovered: 0, total: 64, percentage: 0 },
+        digital: { discovered: 0, total: 64, percentage: 0 },
+        spiritual: { discovered: 0, total: 64, percentage: 0 },
+    },
+
+    traits: generateInitialTraits(),
+    recentlyUnlockedTrait: '00',
+};

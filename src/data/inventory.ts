@@ -1,6 +1,7 @@
 // Interaction Inventory - The "Script" for Twin3
 
 import type { InteractionInventory } from '../types/a2ui';
+import { FAQ_INVENTORY } from './faqData';
 
 export const INTERACTION_INVENTORY: InteractionInventory = [
     // ============================================================
@@ -31,11 +32,10 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
                         description: 'Empower an agent that carries your preferences to work, earn, and filter noise. Your twin manages the digital clutter while you reclaim your time to live.'
                     }
                 ]
-            },
-            layout: 'hero'
+            }
         },
         suggestedActions: [
-            { label: "Proof I'm a Human", payload: 'verify_human' },
+            { label: 'Mint Free SBT', payload: 'verify_human' },
             { label: 'What is SBT?', payload: 'sbt_info' },
             { label: 'Why Verify Humanity?', payload: 'why_verify' }
         ]
@@ -76,19 +76,36 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
     },
 
     // ============================================================
-    // 1.6 VERIFICATION FLOW (User initiated)
+    // 1.6 VERIFICATION FLOW (User initiated) - Now starts with wallet binding
     // ============================================================
     {
         id: 'verify_human',
         triggers: ['verify', 'verification', 'prove', 'human'],
         response: {
-            text: "**Verify Humanity**\nSelect a verification method to prove you are human and unlock the Twin Matrix. The Humanity Index measures the likelihood that you are a real person and is the fundamental building block of trust in the decentralised community.",
+            text: "**Connect Your Identity**\nFirst, let's bind your account. Choose a wallet connection method to get started.",
             delay: 500,
-            widget: 'human_verification'
+            widget: 'wallet_binding'
         },
         suggestedActions: [
             { label: 'What is SBT?', payload: 'sbt_info' },
             { label: 'Why Verify Humanity?', payload: 'why_verify' }
+        ]
+    },
+
+    // ============================================================
+    // 1.6b BINDING SUCCESS → reCAPTCHA verification
+    // ============================================================
+    {
+        id: 'binding_success',
+        triggers: [],
+        response: {
+            text: "**Verify Humanity**\nGreat! Your identity is bound. Before your SBT can be minted, we need a quick verification to confirm you're a real human.",
+            delay: 500,
+            widget: 'recaptcha'
+        },
+        suggestedActions: [
+            { label: 'Why Verify Humanity?', payload: 'why_verify' },
+            { label: 'What is SBT?', payload: 'sbt_info' }
         ]
     },
 
@@ -116,13 +133,114 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
         id: 'verification_success',
         triggers: ['verified', 'success'],
         response: {
-            text: "Verification Recorded.\n\nYour humanity score has been updated. You can continue adding verification methods to boost your score.",
+            text: "**Verification Complete — You are now a Verified Human.**\n\nYour Soulbound Token (SBT) has been successfully minted on the BNB Chain, marking the birth of your Digital Twin.",
             delay: 500,
             widget: 'twin_matrix'
         },
         suggestedActions: [
             { label: 'View My Matrix', payload: 'twin_matrix' },
-            { label: 'What is SBT?', payload: 'sbt_info' }
+            { label: 'Claim Airdrop', payload: 'airdrop_claim' }
+        ]
+    },
+
+    // ============================================================
+    // 1.9 AIRDROP CLAIM (Score gating)
+    // ============================================================
+    {
+        id: 'airdrop_claim',
+        triggers: ['claim', 'airdrop', 'token'],
+        response: {
+            text: "**Airdrop Status**\nLet's check if you're eligible to claim your $twin3 tokens.",
+            delay: 500,
+            widget: 'airdrop_claim'
+        },
+        suggestedActions: [
+            { label: 'How to increase score?', payload: 'matrix' },
+            { label: 'Check Leaderboard', payload: 'leaderboard' }
+        ]
+    },
+
+    // ============================================================
+    // 1.10 REWARD DASHBOARD
+    // ============================================================
+    {
+        id: 'show_rewards',
+        triggers: ['rewards', 'balance', 'dashboard'],
+        response: {
+            text: "**Your Rewards**\nHere's your current $twin3 balance and completed missions.",
+            delay: 500,
+            widget: 'reward_dashboard'
+        },
+        suggestedActions: [
+            { label: 'Invite Friends', payload: 'invite_friends' },
+            { label: 'Join Community', payload: 'community_preview' }
+        ]
+    },
+
+    // ============================================================
+    // 1.11 INVITE FRIENDS
+    // ============================================================
+    {
+        id: 'invite_friends',
+        triggers: ['invite', 'referral', 'share'],
+        response: {
+            text: "**Invite Friends**\nShare your unique invite link to earn bonus $twin3 tokens.",
+            delay: 500,
+            widget: 'invite_friends'
+        },
+        suggestedActions: [
+            { label: 'View Rewards', payload: 'show_rewards' },
+            { label: 'Join Community', payload: 'community_preview' }
+        ]
+    },
+
+    // ============================================================
+    // 1.12 COMMUNITY PREVIEW
+    // ============================================================
+    {
+        id: 'community_preview',
+        triggers: ['community', 'future', 'upcoming'],
+        response: {
+            text: "**Community & Upcoming Tasks**\nExplore the twin3 community and preview future earning opportunities.",
+            delay: 500,
+            widget: 'community_preview'
+        },
+        suggestedActions: [
+            { label: 'View Rewards', payload: 'show_rewards' },
+            { label: 'Invite Friends', payload: 'invite_friends' }
+        ]
+    },
+
+    // ============================================================
+    // 1.13 AIRDROP TASK DASHBOARD (Demo Flow)
+    // ============================================================
+    {
+        id: 'airdrop_tasks',
+        triggers: ['boost', 'tasks', 'missions'],
+        response: {
+            text: "**Complete Missions to Maximize Your Airdrop**\n\nThe total airdrop pool is 10,000 $twin3. Your share is calculated based on your Matrix score and completed missions.\n\nComplete all 4 missions below to maximize your rewards!",
+            delay: 500,
+            widget: 'airdrop_task_dashboard'
+        },
+        suggestedActions: [
+            { label: 'View My Matrix', payload: 'twin_matrix' }
+        ]
+    },
+
+    // ============================================================
+    // 1.14 FINAL REWARD (Demo Flow)
+    // ============================================================
+    {
+        id: 'final_reward',
+        triggers: ['final', 'complete'],
+        response: {
+            text: "**All Missions Complete!**\n\nCalculating your airdrop share...",
+            delay: 500,
+            widget: 'final_reward_dashboard'
+        },
+        suggestedActions: [
+            { label: 'Invite Friends', payload: 'invite_friends' },
+            { label: 'Join Community', payload: 'community_preview' }
         ]
     },
 
@@ -328,5 +446,10 @@ export const INTERACTION_INVENTORY: InteractionInventory = [
             { label: 'What is SBT?', payload: 'sbt_info' },
             { label: 'Mint Free SBT', payload: 'verify_human' }
         ]
-    }
+    },
+
+    // ============================================================
+    // 11. FAQ & KNOWLEDGE BASE (Spread at the end)
+    // ============================================================
+    ...FAQ_INVENTORY
 ];

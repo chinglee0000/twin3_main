@@ -2,6 +2,7 @@ export type FlowState =
     | 'initial'
     | 'selecting_method'
     | 'verifying'
+    | 'widget_failed'
     | 'verification_complete'
     | 'matrix_view'
     | 'simulate_kol';

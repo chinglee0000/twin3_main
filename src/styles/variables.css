@@ -1,9 +1,10 @@
 /* ==================================================================
    Twin3 Design System — CSS Variables
    Color palette, typography, spacing, and design tokens
+   Based on ui-spec.md
    ================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   /* ============================================================
@@ -53,7 +54,13 @@
   --glow-accent: 0 0 24px rgba(255, 255, 255, 0.06);
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', 'Open Sans', sans-serif;
+  --font-heading: 'Montserrat', 'Inclusive Sans', 'Sora', 'Geologica', sans-serif;
+  
+  /* Font Weights (Max 500 per ui-spec.md) */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
 
   /* Spacing */
   --space-xs: 4px;

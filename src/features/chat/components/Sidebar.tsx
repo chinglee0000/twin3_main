@@ -1,6 +1,7 @@
 import React from 'react';
-import { Settings, Sparkles, Grid, CheckSquare, LayoutDashboard, X, MessageSquare } from 'lucide-react';
+import { Settings, Sparkles, Grid, CheckSquare, LayoutDashboard, MessageSquare, X } from 'lucide-react';
 import { Logo } from '../../../components/ui/Logo';
+import { LogoWithText } from '../../../components/ui/LogoWithText';
 import { SidebarNavButton } from './SidebarNavButton';
 
 interface SidebarProps {
@@ -16,6 +17,7 @@ interface SidebarProps {
     onReplayIntro: () => void;
     quickActions?: Array<{ icon: any; label: string; action: string }>;
     onQuickAction?: (actionId: string) => void;
+    hasBanner?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -25,10 +27,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     activeSection,
     onReplayIntro,
     quickActions = [],
-    onQuickAction
+    onQuickAction,
+    hasBanner = false,
 }) => {
     const isDesktop = window.innerWidth >= 1024;
     const isCollapsed = isDesktop && !isOpen;
+    const bannerHeight = hasBanner ? 50 : 0;
+
 
     return (
         <aside
@@ -40,10 +45,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 flexDirection: 'column',
                 position: isDesktop ? 'relative' : 'fixed',
                 left: 0,
-                top: 0,
-                height: '100%',
+                top: isDesktop ? 0 : bannerHeight,
+                height: isDesktop ? '100%' : `calc(100% - ${bannerHeight}px)`,
                 zIndex: 40,
-                transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.4s cubic-bezier(0.4, 0, 0.2, 1), height 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 overflow: isOpen ? 'visible' : 'hidden',
                 borderRight: '1px solid var(--glass-border)',
             }}
@@ -59,24 +64,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: isCollapsed ? 'center' : 'space-between',
+                    justifyContent: isCollapsed ? 'center' : (isDesktop ? 'center' : 'space-between'),
                     gap: '8px'
                 }}>
                     {isCollapsed ? (
                         <Logo />
                     ) : (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            <Logo />
-                            <span style={{
-                                fontSize: '16px',
-                                fontWeight: 600,
-                                color: 'var(--color-text-primary)'
-                            }}>twin3.ai</span>
-                        </div>
+                        <LogoWithText height={28} />
                     )}
 
                     {!isDesktop && (
@@ -93,6 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </button>
                     )}
                 </div>
+
             </div>
 
             {/* Navigation */}
@@ -102,10 +97,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 overflow: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '8px',
+                gap: '4px',
                 alignItems: isCollapsed ? 'center' : 'stretch'
             }} className="scrollbar-hide">
-                {/* Main Navigation Tabs */}
+
+                {/* Desktop: always show nav tabs */}
+                {/* Mobile: always show nav tabs now (single list) */}
                 <SidebarNavButton
                     icon={MessageSquare}
                     label="Chat"
@@ -138,25 +135,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => onNavigate('dashboard')}
                 />
 
-                {/* Mobile Quick Actions */}
+                {/* Mobile Quick Actions Section */}
                 {!isDesktop && quickActions.length > 0 && (
                     <>
                         <div style={{
-                            height: '1px',
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            margin: '12px 0'
-                        }} />
-
-                        <div style={{
+                            margin: '16px 0 8px',
                             padding: '0 12px',
-                            fontSize: '13px',
-                            fontWeight: 500,
+                            fontSize: '11px',
+                            fontWeight: 600,
                             color: 'var(--color-text-dim)',
-                            marginBottom: '8px'
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
                         }}>
                             Quick Actions
                         </div>
-
                         {quickActions.map((qa, i) => {
                             const Icon = qa.icon;
                             return (
@@ -179,6 +171,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 >
                                     <Icon size={20} />
                                     <span style={{ fontWeight: 500 }}>{qa.label}</span>
+                                    <span style={{
+                                        marginLeft: 'auto',
+                                        color: 'var(--color-text-dim)',
+                                        fontSize: '14px'
+                                    }}>→</span>
                                 </button>
                             );
                         })}
@@ -206,7 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         gap: '12px',
                         padding: isCollapsed ? '0' : '10px 12px',
                         background: 'transparent',
-                        color: 'var(--color-text-dim)',
+                        color: 'var(--color-text-secondary)',
                         border: 'none',
                         borderRadius: 'var(--radius-md)',
                         cursor: 'pointer',
@@ -228,7 +225,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         gap: '12px',
                         padding: isCollapsed ? '0' : '10px 12px',
                         background: 'transparent',
-                        color: 'var(--color-text-dim)',
+                        color: 'var(--color-text-secondary)',
                         border: 'none',
                         borderRadius: 'var(--radius-md)',
                         cursor: 'pointer',
