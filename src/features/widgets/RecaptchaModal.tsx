@@ -20,6 +20,7 @@ interface RecaptchaWidgetProps {
 }
 
 const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
+const RECAPTCHA_ENABLED = SITE_KEY && SITE_KEY.length > 0;
 
 // ─── Helper: load reCAPTCHA script (Explicit) ────────────
 function loadRecaptchaScript(): Promise<void> {
