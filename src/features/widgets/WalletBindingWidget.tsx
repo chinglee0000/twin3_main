@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Wallet, Bot, AlertTriangle, CheckCircle, Loader2, ArrowLeft, Smartphone, ExternalLink, X, HelpCircle, ChevronDown, ChevronUp, Briefcase, Key } from 'lucide-react';
+import { Wallet, AlertTriangle, CheckCircle, ArrowLeft, Smartphone, ExternalLink, X, HelpCircle, ChevronDown, ChevronUp, Briefcase, Key } from 'lucide-react';
 
 // ─── Types ─────────────────────────────────────────────────
 type BindingStep = 'choose' | 'connecting' | 'conflict' | 'success';
@@ -21,7 +21,6 @@ const MOCK_CONFLICT_ADDRESS = '0x9fE...3bA1';
 // ─── Component ─────────────────────────────────────────────
 export const WalletBindingWidget: React.FC<WalletBindingWidgetProps> = ({
     onBindingComplete,
-    onClose,
     forceConflict = false,
 }) => {
     const [step, setStep] = useState<BindingStep>('choose');

@@ -80,23 +80,26 @@ export const RecaptchaWidget: React.FC<RecaptchaWidgetProps> = ({
 
                 if (hasRendered.current) return;
 
-                window.grecaptcha.ready(() => {
+                window.grecaptcha?.ready(() => {
                     const container = document.getElementById(containerId);
                     if (!container) return;
 
-                    widgetIdRef.current = window.grecaptcha.render(containerId, {
+                    const renderedId = window.grecaptcha?.render(containerId, {
                         sitekey: SITE_KEY,
                         theme: 'light',
                         callback: (token: string) => {
                             onVerified?.(token);
                         },
                         'expired-callback': () => {
-                            window.grecaptcha.reset(widgetIdRef.current!);
+                            window.grecaptcha?.reset(widgetIdRef.current!);
                         },
                         'error-callback': () => {
                             setError('reCAPTCHA encountered an error');
                         }
                     });
+                    if (renderedId !== undefined) {
+                        widgetIdRef.current = renderedId;
+                    }
                     hasRendered.current = true;
                 });
             } catch (err) {

@@ -2,7 +2,6 @@
 
 // Main Layouts
 export { ChatLayout } from './ChatLayout';
-export { ChatLayoutV2 } from './ChatLayoutV2';
 
 // Components
 export { MessageBubble } from './MessageBubble';

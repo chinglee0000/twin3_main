@@ -12,7 +12,7 @@ import { generateAgentResponse, isAIEnabled, generateSuggestions } from '../../s
 import { DevConsole, devLog, ActiveTaskWidget, GlobalDashboardWidget, HumanVerification, WalletBindingWidget, AirdropClaimCard, RewardDashboard, InviteFriendsCard, CommunityPreview, AirdropTaskDashboard, FinalRewardDashboard, CommunityStatsToast, WelcomeMemberModal } from '../widgets';
 import { RecaptchaWidget } from '../widgets/RecaptchaModal';
 import { ImmersiveIntro } from '../../components/ImmersiveIntro';
-import { useMatrixData, useUpdateMatrixData, useAppStore } from '../../store/appStore';
+import { useMatrixData, useUpdateMatrixData } from '../../store/appStore';
 
 import { Sidebar, QuickActionsPanel, ChatHeader, ChatInput } from './components';
 import { MatrixView } from './views/MatrixView';
@@ -22,7 +22,7 @@ interface ChatLayoutProps {
     contextId?: ContextId;
 }
 
-export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
+export const ChatLayout: React.FC<ChatLayoutProps> = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [isTyping, setIsTyping] = useState(false);
@@ -37,7 +37,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
     const [isCaptchaActive, setIsCaptchaActive] = useState(false);
     const [showCommunityToast, setShowCommunityToast] = useState(true); // Show on load
     const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-    const [userMemberNumber, setUserMemberNumber] = useState(29571); // User's member number
+    const [userMemberNumber] = useState(29571); // User's member number
 
     // Get matrix data from global store
     const matrixData = useMatrixData();
@@ -54,11 +54,49 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
         { icon: HelpCircle, label: 'How It Works', action: 'how_it_works' },
     ];
 
+    // Helper function to determine the optimal scroll target based on message types
+    const determineScrollTarget = (messages: Message[], scrollRef: React.RefObject<HTMLDivElement>): HTMLElement | null => {
+        // Check if the last message is a widget
+        if (messages.length === 0) {
+            return scrollRef.current;
+        }
+        
+        const lastMessage = messages[messages.length - 1];
+        
+        // If the last message is not a widget, return scrollRef (existing behavior)
+        if (lastMessage.type !== 'widget') {
+            return scrollRef.current;
+        }
+        
+        // Last message is a widget - find the preceding non-widget message
+        // Iterate backward through messages array
+        for (let i = messages.length - 2; i >= 0; i--) {
+            const message = messages[i];
+            
+            // Find the first message where type !== 'widget'
+            if (message.type !== 'widget') {
+                // Use document.querySelector with data-message-id to get the DOM element
+                const element = document.querySelector(`[data-message-id="${message.id}"]`);
+                
+                // Return the found element or scrollRef.current as fallback
+                if (element) {
+                    return element as HTMLElement;
+                }
+            }
+        }
+        
+        // No preceding non-widget message found, return scrollRef as fallback
+        return scrollRef.current;
+    };
+
     useEffect(() => {
         // Only scroll if we have more than just welcome message to avoid auto-scroll on landing
         // This ensures the user stays at the top/welcome message when first opening the app
         if (scrollRef.current && messages.length > 1) {
-            scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+            const scrollTarget = determineScrollTarget(messages, scrollRef as React.RefObject<HTMLDivElement>);
+            if (scrollTarget) {
+                scrollTarget.scrollIntoView({ behavior: 'smooth' });
+            }
         }
     }, [messages, isTyping, suggestions]);
 
@@ -244,13 +282,13 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
         triggerResponse(null, 'accept_task', false);
     };
 
-    const handleNewChat = () => {
-        setMessages([]);
-        setSuggestions([]);
-        setActiveTab('chat');
-        triggerResponse(null, 'welcome', false);
-        if (window.innerWidth < 1024) setSidebarOpen(false);
-    };
+    // const handleNewChat = () => {
+    //     setMessages([]);
+    //     setSuggestions([]);
+    //     setActiveTab('chat');
+    //     triggerResponse(null, 'welcome', false);
+    //     if (window.innerWidth < 1024) setSidebarOpen(false);
+    // };
 
     useEffect(() => {
         if (!hasStarted.current) {
@@ -392,7 +430,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
                                 if (msg.type === 'card' && msg.cardData?.type === 'feature_grid') {
                                     const features = msg.cardData.features || [];
                                     return (
-                                        <div key={msg.id} className="animate-fade-in" style={{ marginBottom: '32px' }}>
+                                        <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{ marginBottom: '32px' }}>
                                             {/* Hero Welcome Message */}
                                             <div style={{
                                                 textAlign: 'center',
@@ -546,7 +584,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
                                 // Special handling for browse_tasks - show as 3 clickable task cards
                                 if (msg.type === 'card' && msg.cardData?.type === 'task_opportunity') {
                                     return (
-                                        <div key={msg.id} className="animate-fade-in" style={{ marginBottom: '24px' }}>
+                                        <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{ marginBottom: '24px' }}>
                                             {/* AI Message */}
                                             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                                                 <div style={{
@@ -686,7 +724,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
                                     if (msg.widget === 'twin_matrix') {
                                         // Matrix data is now managed globally in appStore
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -703,7 +741,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
 
                                     if (msg.widget === 'active_task') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -718,7 +756,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
                                     }
                                     if (msg.widget === 'global_dashboard') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start',
@@ -738,7 +776,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
 
                                     if (msg.widget === 'wallet_binding') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -755,7 +793,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
 
                                     if (msg.widget === 'recaptcha') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -851,7 +889,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
 
                                     if (msg.widget === 'human_verification') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -900,7 +938,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
 
                                     if (msg.widget === 'airdrop_claim') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -922,7 +960,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
 
                                     if (msg.widget === 'reward_dashboard') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -942,7 +980,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
 
                                     if (msg.widget === 'invite_friends') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -954,7 +992,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
 
                                     if (msg.widget === 'community_preview') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -973,7 +1011,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
 
                                     if (msg.widget === 'airdrop_task_dashboard') {
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'
@@ -996,7 +1034,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ contextId }) => {
                                         const finalReward = parseInt(sessionStorage.getItem('finalReward') || '0');
                                         const finalScore = parseInt(sessionStorage.getItem('finalScore') || '0');
                                         return (
-                                            <div key={msg.id} className="animate-fade-in" style={{
+                                            <div key={msg.id} data-message-id={msg.id} className="animate-fade-in" style={{
                                                 marginBottom: '24px',
                                                 display: 'flex',
                                                 justifyContent: 'flex-start'

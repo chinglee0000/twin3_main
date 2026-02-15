@@ -22,8 +22,7 @@ import { useAppStore } from '../../store/appStore';
 
 // Import Humanity Index calculator
 import { 
-    calculateHumanityIndex, 
-    calculateHumanVerificationScore,
+    calculateHumanityIndex,
     humanityIndexToPercentage 
 } from '../../services/humanityIndexCalculator';
 

@@ -22,7 +22,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     const parsedContent = parseMarkdown(message.content);
 
     return (
-        <div className="animate-fade-in" style={{
+        <div data-message-id={message.id} className="animate-fade-in" style={{
             display: 'flex',
             justifyContent: isUser ? 'flex-end' : 'flex-start',
             marginBottom: '16px',
