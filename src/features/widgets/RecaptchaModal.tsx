@@ -71,6 +71,15 @@ export const RecaptchaWidget: React.FC<RecaptchaWidgetProps> = ({
     useEffect(() => {
         onStart?.();
 
+        // If reCAPTCHA is not enabled (no site key), auto-verify after a short delay
+        if (!RECAPTCHA_ENABLED) {
+            const timer = setTimeout(() => {
+                console.warn('reCAPTCHA is disabled (no site key configured). Auto-verifying for demo purposes.');
+                onVerified?.('demo-token-no-recaptcha');
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+
         const initRecaptcha = async () => {
             try {
                 if (!SITE_KEY) {
@@ -135,25 +144,49 @@ export const RecaptchaWidget: React.FC<RecaptchaWidgetProps> = ({
                 marginBottom: '4px'
             }}>
                 <Shield size={14} className="text-primary" />
-                <span>Please complete the verification below:</span>
+                <span>
+                    {RECAPTCHA_ENABLED 
+                        ? 'Please complete the verification below:' 
+                        : 'Demo Mode: Verification bypassed (no reCAPTCHA key configured)'}
+                </span>
             </div>
 
-            {/* reCAPTCHA Container */}
-            <div
-                id={containerId}
-                className="recaptcha-container"
-                style={{
-                    minHeight: '78px',
-                    minWidth: '304px',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    borderRadius: '4px',
+            {/* reCAPTCHA Container - only show if enabled */}
+            {RECAPTCHA_ENABLED && (
+                <div
+                    id={containerId}
+                    className="recaptcha-container"
+                    style={{
+                        minHeight: '78px',
+                        minWidth: '304px',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                />
+            )}
+
+            {/* Demo mode indicator */}
+            {!RECAPTCHA_ENABLED && (
+                <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
-                }}
-            />
+                    gap: '8px',
+                    color: '#f59e0b',
+                    fontSize: '13px',
+                    marginTop: '4px',
+                    padding: '8px',
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    borderRadius: '4px'
+                }}>
+                    <AlertTriangle size={14} />
+                    <span>Auto-verifying in demo mode...</span>
+                </div>
+            )}
 
-            {error && (
+            {error && RECAPTCHA_ENABLED && (
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
